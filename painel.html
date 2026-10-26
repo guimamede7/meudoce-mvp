@@ -28,6 +28,8 @@
 .agenda-item{border-top:1px solid #ecd7df;padding:14px 0}.agenda-item:first-child{border-top:0}.agenda-item p{margin:5px 0}.agenda-item .actions button{width:auto}
 .agenda-stats{background:#fff1f5;padding:12px;border-radius:12px;margin-bottom:12px;font-size:14px}
 @media(max-width:480px){.agenda-day{min-height:58px;padding:5px 3px}.agenda-day small{font-size:10px}.tabbar button{min-width:calc(50% - 5px)}}
+
+.agenda-blocked{background:#fff0e6!important;border-color:#d58a52!important}.agenda-blocked small{color:#9b5127}.block-list{display:grid;gap:9px;margin-top:12px}.block-item{border:1px solid #edd2c4;background:#fff8f3;border-radius:10px;padding:12px}.block-item p{margin:5px 0}.block-form{background:#fff9fb;border:1px solid #f0dce5;border-radius:12px;padding:14px;margin-top:14px}.block-form .grid{grid-template-columns:repeat(2,minmax(0,1fr))}.block-hint{font-size:13px;color:#795d68}.agenda-capacity{font-weight:700;color:#963e61}
 </style>
 </head>
 <body>
@@ -49,6 +51,12 @@
 <section class="card"><div class="agenda-head"><button id="agendaPrev" type="button" class="secondary" aria-label="Mês anterior">‹</button><h2 id="agendaMonth">Agenda</h2><button id="agendaNext" type="button" class="secondary" aria-label="Próximo mês">›</button></div>
 <div class="agenda-week"><span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span></div><div id="agendaGrid" class="agenda-days"></div>
 <p class="muted">Toque em um dia para ver as encomendas. A contagem inclui pedidos pendentes; não limita a produção.</p></section>
+<section class="card"><h2>🔒 Gerenciar disponibilidade</h2><p class="muted">Bloqueios são avisos de disponibilidade. Não excluem encomendas e não impedem novas solicitações sujeitas à aprovação.</p>
+<div id="blockDayLabel" class="agenda-capacity"></div>
+<form id="blockForm" class="block-form"><label for="blockType">Tipo de bloqueio</label><select id="blockType"><option value="dia_inteiro">Dia inteiro</option><option value="horario">Horário específico</option></select>
+<div id="blockHours" class="grid hidden"><div><label for="blockStart">Início</label><select id="blockStart"></select></div><div><label for="blockEnd">Fim</label><select id="blockEnd"></select></div></div>
+<label for="blockReason">Motivo (opcional)</label><input id="blockReason" maxlength="200" placeholder="Ex.: Folga, compromisso, agenda cheia"><div class="actions"><button id="blockSave" type="submit">🔒 Salvar bloqueio</button><button id="blockReload" type="button" class="secondary">Atualizar bloqueios</button></div></form>
+<div id="blockList" class="block-list"></div></section>
 <section class="card"><h2 id="agendaDayTitle">Encomendas do dia</h2><div id="agendaStats" class="agenda-stats"></div><div id="agendaList"></div></section>
 </div>
 <div id="cakesArea" class="hidden">
@@ -90,11 +98,11 @@ const $=id=>document.getElementById(id);
 const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const STATUSES=['Aguardando avaliação','Aprovado','Em produção','Pronto para retirada','Concluído','Recusado'];
 const APPROVED=['Aprovado','Em produção','Pronto para retirada','Concluído'];
-let db,orders=[],cakes=[],reservations=[],authorized=false;
+let db,orders=[],cakes=[],reservations=[],blocks=[],authorized=false;
 function notice(msg,type=''){const el=$('message');el.textContent=msg;el.className='notice'+(type?' '+type:'');}
 function clearNotice(){$('message').classList.add('hidden');}
 function node(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=String(text);return e;}
-function showLogin(){$('adminArea').classList.add('hidden');$('loginArea').classList.remove('hidden');$('password').value='';authorized=false;orders=[];cakes=[];reservations=[];}
+function showLogin(){$('adminArea').classList.add('hidden');$('loginArea').classList.remove('hidden');$('password').value='';authorized=false;orders=[];cakes=[];reservations=[];blocks=[];}
 function showAdmin(email){$('loginArea').classList.add('hidden');$('adminArea').classList.remove('hidden');$('userEmail').textContent=email||'Administradora';}
 async function verifyAdmin(user){
   const {data,error}=await db.from('administradores').select('usuario_id').eq('usuario_id',user.id).maybeSingle();
@@ -106,7 +114,7 @@ async function checkSession(){
   if(error||!data.user){showLogin();return;}
   try{
     if(!await verifyAdmin(data.user)){await db.auth.signOut();showLogin();notice('Esta conta não possui autorização para acessar o painel.','error');return;}
-    authorized=true;showAdmin(data.user.email);clearNotice();await loadOrders();await loadCakes();await loadReservations();
+    authorized=true;showAdmin(data.user.email);clearNotice();await loadOrders();await loadCakes();await loadReservations();await loadBlocks();
   }catch(e){showLogin();notice('Não foi possível validar o acesso: '+e.message,'error');}
 }
 async function loadOrders(){
@@ -156,6 +164,34 @@ let agendaYear=agendaToday.getFullYear(),agendaMonth=agendaToday.getMonth();
 let agendaSelected=[agendaYear,String(agendaMonth+1).padStart(2,'0'),String(agendaToday.getDate()).padStart(2,'0')].join('-');
 function agendaDate(y,m,d){return [y,String(m+1).padStart(2,'0'),String(d).padStart(2,'0')].join('-');}
 function agendaTime(o){const t=o.horario_retirada||o.horario_solicitado;return t?String(t).slice(0,5):'Sem horário';}
+async function loadBlocks(){
+  if(!authorized)return;
+  const {data,error}=await db.from('agenda_bloqueios').select('id,data,tipo,horario_inicio,horario_fim,motivo').order('data',{ascending:true});
+  if(error){notice('Erro ao carregar bloqueios: '+error.message,'error');return;}
+  blocks=data||[];renderAgenda();
+}
+function fmtBlockTime(t){return t?String(t).slice(0,5):'';}
+function renderBlocks(){
+  const [y,m,d]=agendaSelected.split('-');
+  $('blockDayLabel').textContent=`Data selecionada: ${d}/${m}/${y}`;
+  const list=$('blockList');list.replaceChildren();
+  const selected=blocks.filter(b=>b.data===agendaSelected).sort((a,b)=>String(a.horario_inicio||'').localeCompare(String(b.horario_inicio||'')));
+  if(!selected.length){list.append(node('p','muted','Nenhum bloqueio nesta data.'));return;}
+  selected.forEach(b=>{
+    const el=node('div','block-item');
+    el.append(node('strong','',b.tipo==='horario'?`🕒 Das ${fmtBlockTime(b.horario_inicio)} às ${fmtBlockTime(b.horario_fim)}`:'🔒 Dia inteiro'));
+    if(b.motivo)el.append(node('p','muted',b.motivo));
+    const btn=node('button','secondary','🔓 Desbloquear');btn.type='button';
+    btn.onclick=async()=>{
+      if(!window.confirm('Remover este bloqueio da agenda?'))return;
+      btn.disabled=true;
+      const {data,error}=await db.from('agenda_bloqueios').delete().eq('id',b.id).select('id');
+      if(error||!data?.length){notice('Não foi possível remover: '+(error?.message||'Permissão não confirmada.'),'error');btn.disabled=false;return;}
+      notice('Bloqueio removido.','success');await loadBlocks();
+    };
+    el.append(btn);list.append(el);
+  });
+}
 function renderAgenda(){
   if(!$('agendaGrid'))return;
   $('agendaMonth').textContent=new Date(agendaYear,agendaMonth,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
@@ -167,9 +203,11 @@ function renderAgenda(){
     const d=i-first+1,inside=d>=1&&d<=days;
     const key=inside?agendaDate(agendaYear,agendaMonth,d):'';
     const items=inside?orders.filter(o=>o.data_retirada===key&&o.status!=='Recusado'):[];
-    const b=node('button','agenda-day'+(!inside?' other':'')+(key===agendaSelected?' selected':'')+(key===today?' today':''));b.type='button';b.disabled=!inside;
+    const blocked=inside&&blocks.some(x=>x.data===key);
+    const b=node('button','agenda-day'+(!inside?' other':'')+(key===agendaSelected?' selected':'')+(key===today?' today':'')+(blocked?' agenda-blocked':''));b.type='button';b.disabled=!inside;
     b.append(node('strong','',inside?d:' '));
     if(items.length){const sm=node('small');sm.append(node('span','dot'),document.createTextNode(items.length+' '+(items.length===1?'pedido':'pedidos')));b.append(sm);}
+    if(blocked)b.append(node('small','','🔒 Restrição'));
     if(inside)b.onclick=()=>{agendaSelected=key;renderAgenda();};
     grid.append(b);
   }
@@ -177,6 +215,7 @@ function renderAgenda(){
   const [y,m,d]=agendaSelected.split('-');$('agendaDayTitle').textContent=`Encomendas de ${d}/${m}/${y}`;
   const kg=dayOrders.reduce((sum,o)=>sum+Number(o.peso_kg||0),0);
   $('agendaStats').textContent=`${dayOrders.length} ${dayOrders.length===1?'encomenda':'encomendas'} · ${kg.toLocaleString('pt-BR')} kg previstos · ${dayOrders.filter(o=>o.status==='Aguardando avaliação').length} aguardando avaliação`;
+  renderBlocks();
   const list=$('agendaList');list.replaceChildren();
   if(!dayOrders.length){list.append(node('p','muted','Nenhuma encomenda registrada para este dia.'));return;}
   dayOrders.forEach(o=>{
@@ -193,6 +232,32 @@ function renderAgenda(){
 function agendaMove(delta){const d=new Date(agendaYear,agendaMonth+delta,1);agendaYear=d.getFullYear();agendaMonth=d.getMonth();agendaSelected=agendaDate(agendaYear,agendaMonth,1);renderAgenda();}
 $('agendaPrev').onclick=()=>agendaMove(-1);
 $('agendaNext').onclick=()=>agendaMove(1);
+for(let h=8;h<=19;h++)for(let m of [0,30]){
+  if(h===19&&m===30)continue;
+  const val=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  for(const id of ['blockStart','blockEnd']){const opt=node('option','',val);opt.value=val;$(id).append(opt);}
+}
+$('blockStart').value='14:00';$('blockEnd').value='16:00';
+$('blockType').onchange=()=>$('blockHours').classList.toggle('hidden',$('blockType').value!=='horario');
+$('blockReload').onclick=loadBlocks;
+$('blockForm').addEventListener('submit',async e=>{
+  e.preventDefault();if(!authorized)return;
+  const btn=$('blockSave'),tipo=$('blockType').value;
+  const inicio=tipo==='horario'?$('blockStart').value:null;
+  const fim=tipo==='horario'?$('blockEnd').value:null;
+  if(tipo==='horario'&&(!inicio||!fim||inicio>=fim)){notice('O horário final deve ser posterior ao inicial.','error');return;}
+  if(blocks.some(b=>b.data===agendaSelected&&(b.tipo==='dia_inteiro'||tipo==='dia_inteiro'||(b.tipo==='horario'&&inicio<fmtBlockTime(b.horario_fim)&&fim>fmtBlockTime(b.horario_inicio))))){
+    notice('Já existe um bloqueio nesta data que cobre ou coincide com o período escolhido.','error');return;
+  }
+  btn.disabled=true;
+  try{
+    const payload={data:agendaSelected,tipo,horario_inicio:inicio,horario_fim:fim,motivo:$('blockReason').value.trim()||null};
+    const {data,error}=await db.from('agenda_bloqueios').insert(payload).select('id');
+    if(error||!data?.length)throw Error(error?.message||'Permissão não confirmada.');
+    $('blockReason').value='';notice('Bloqueio salvo com sucesso.','success');await loadBlocks();
+  }catch(err){notice('Erro ao salvar bloqueio: '+err.message,'error');}
+  finally{btn.disabled=false;}
+});
 
 function switchTab(tab){
   $('ordersArea').classList.toggle('hidden',tab!=='orders');
