@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MeuDoce | Painel profissional</title>
+<style>
+:root{font-family:system-ui,-apple-system,sans-serif;color:#49313d;background:#fff7f7}*{box-sizing:border-box}body{margin:0}header{background:#963e61;color:white;padding:24px 18px}header>div,main{max-width:960px;margin:auto}header h1{margin:0;font-size:26px}header p{margin:6px 0 0}main{padding:18px}.notice{background:#fff0e6;border-left:4px solid #c77c41;padding:13px;border-radius:8px;margin-bottom:16px;font-size:14px}.error{background:#ffe7e7;border-left-color:#b93030}.success{background:#edf8ef;border-left-color:#388b51}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.card{background:white;border:1px solid #efd9df;border-radius:15px;padding:16px;margin-bottom:13px;box-shadow:0 2px 9px #5223350a}.metric{font-size:26px;font-weight:800;color:#963e61}.muted{color:#795d68;font-size:13px}h2{font-size:19px;margin:0 0 13px}h3{margin:0 0 8px}label{display:block;font-weight:600;margin:12px 0 5px}input,select,textarea{width:100%;font:inherit;border:1px solid #dcc5cf;border-radius:9px;padding:11px;background:white;color:#49313d}textarea{min-height:70px}button,.button{background:#963e61;color:white;border:0;border-radius:9px;padding:11px 14px;font:inherit;font-weight:700;cursor:pointer;display:inline-block;text-decoration:none}button:disabled{opacity:.55;cursor:wait}button.secondary{background:#f4e5eb;color:#7b3753}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.actions button{flex:1}.row{display:flex;gap:12px;justify-content:space-between;align-items:center}.tag{font-size:12px;border-radius:20px;background:#f6e4eb;padding:5px 9px;font-weight:700}.empty{text-align:center;color:#795d68;padding:25px}.order{border-top:1px solid #f0dfe5;padding:17px 0}.order:first-child{border-top:0}.order p{margin:5px 0}.filters{display:flex;gap:8px;flex-wrap:wrap}.filters>*{flex:1;min-width:140px}.hidden{display:none!important}.login{max-width:440px;margin:25px auto}.small{font-size:13px}@media(min-width:700px){.grid{grid-template-columns:repeat(4,1fr)}}
+
+.tabbar{display:flex;gap:8px;margin-bottom:14px}.tabbar button{flex:1}
+.tabbar button.active{background:#963e61;color:white}
+.tabbar button:not(.active){background:#f4e5eb;color:#7b3753}
+.product-photo{width:105px;height:105px;object-fit:cover;border-radius:12px;background:#f4e5eb}
+.product-item{display:flex;gap:12px;align-items:flex-start;border-top:1px solid #f0dfe5;padding:14px 0}
+.product-item:first-child{border-top:0}
+.product-info{flex:1;min-width:0}
+.product-info p{margin:5px 0}
+.product-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.product-actions button{font-size:13px;padding:8px 10px}
+.preview{max-width:180px;max-height:180px;object-fit:cover;border-radius:12px;margin-top:8px}
+
+.tabbar{flex-wrap:wrap}.tabbar button{min-width:135px}
+.agenda-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}.agenda-head button{width:auto}.agenda-head h2{margin:0;font-size:20px;text-align:center}
+.agenda-week,.agenda-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.agenda-week{text-align:center;color:#755966;font-size:12px;margin-bottom:7px}
+.agenda-day{min-width:0;min-height:66px;border:1px solid #ecd7df;border-radius:10px;background:#fff;text-align:left;padding:7px 5px;color:#49313d;cursor:pointer;font:inherit}
+.agenda-day.other{opacity:.35}.agenda-day.selected{border:2px solid #963e61;background:#fff0f5}.agenda-day.today{box-shadow:inset 0 0 0 1px #c97b9a}
+.agenda-day strong{display:block;font-size:14px}.agenda-day small{display:block;font-size:11px;margin-top:6px;color:#873756;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.agenda-day .dot{display:inline-block;width:7px;height:7px;background:#c97932;border-radius:50%;margin-right:3px}
+.agenda-item{border-top:1px solid #ecd7df;padding:14px 0}.agenda-item:first-child{border-top:0}.agenda-item p{margin:5px 0}.agenda-item .actions button{width:auto}
+.agenda-stats{background:#fff1f5;padding:12px;border-radius:12px;margin-bottom:12px;font-size:14px}
+@media(max-width:480px){.agenda-day{min-height:58px;padding:5px 3px}.agenda-day small{font-size:10px}.tabbar button{min-width:calc(50% - 5px)}}
+</style>
+</head>
+<body>
+<header><div><h1>🍰 MeuDoce | Gestão</h1><p>Um Doce de Amor · Painel da Juliana</p></div></header>
+<main>
+<div id="message" class="notice hidden" role="status"></div>
+<section id="loginArea" class="card login">
+<h2>Acesso profissional</h2><p class="muted">Entre com a conta autorizada da Juliana.</p>
+<form id="loginForm"><label for="email">E-mail</label><input id="email" type="email" autocomplete="username" required><label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" required><div class="actions"><button id="loginBtn" type="submit">Entrar no painel</button></div></form>
+</section>
+<div id="adminArea" class="hidden">
+<div class="row" style="margin-bottom:14px;flex-wrap:wrap"><span id="userEmail" class="muted"></span><button id="logout" class="secondary">Sair</button></div>
+<nav class="tabbar" aria-label="Áreas do painel"><button type="button" id="tabOrders" class="active">📋 Encomendas</button><button type="button" id="tabAgenda">📅 Agenda</button><button type="button" id="tabCakes">🍰 Pronta Entrega</button><button type="button" id="tabReservations">📩 Reservas <span id="reservationCount"></span></button></nav>
+<div id="ordersArea">
+<section class="grid"><div class="card"><div class="muted">Pedidos</div><div id="total" class="metric">0</div></div><div class="card"><div class="muted">Aguardando</div><div id="pending" class="metric">0</div></div><div class="card"><div class="muted">Aprovados</div><div id="approved" class="metric">0</div></div><div class="card"><div class="muted">Valor aprovado</div><div id="revenue" class="metric">R$ 0</div></div></section>
+<section class="card"><h2>Pedidos e orçamentos</h2><div class="filters"><input id="search" placeholder="Buscar cliente ou pedido" aria-label="Buscar pedidos"><select id="filter" aria-label="Filtrar status"><option value="">Todos os status</option><option>Aguardando avaliação</option><option>Aprovado</option><option>Em produção</option><option>Pronto para retirada</option><option>Concluído</option><option>Recusado</option></select></div><div class="actions"><button id="refresh" class="secondary">Atualizar pedidos</button><button id="export" class="secondary">Exportar backup</button></div><div id="orders" class="empty">Carregando pedidos...</div></section>
+</div>
+<div id="agendaArea" class="hidden">
+<section class="card"><div class="agenda-head"><button id="agendaPrev" type="button" class="secondary" aria-label="Mês anterior">‹</button><h2 id="agendaMonth">Agenda</h2><button id="agendaNext" type="button" class="secondary" aria-label="Próximo mês">›</button></div>
+<div class="agenda-week"><span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span></div><div id="agendaGrid" class="agenda-days"></div>
+<p class="muted">Toque em um dia para ver as encomendas. A contagem inclui pedidos pendentes; não limita a produção.</p></section>
+<section class="card"><h2 id="agendaDayTitle">Encomendas do dia</h2><div id="agendaStats" class="agenda-stats"></div><div id="agendaList"></div></section>
+</div>
+<div id="cakesArea" class="hidden">
+<section class="card">
+<h2>🍰 Gerenciar Pronta Entrega</h2>
+<p class="muted">Cadastre os bolos disponíveis. Somente produtos publicados e com estoque aparecem para clientes.</p>
+<form id="cakeForm">
+<input type="hidden" id="cakeId">
+<label for="cakeName">Nome do bolo</label><input id="cakeName" maxlength="100" required placeholder="Ex.: Bolo de chocolate">
+<label for="cakeDescription">Descrição</label><textarea id="cakeDescription" maxlength="500" placeholder="Recheio, peso, tamanho..."></textarea>
+<div class="grid" style="grid-template-columns:repeat(2,1fr)">
+<div><label for="cakePrice">Preço (R$)</label><input id="cakePrice" type="number" min="0.01" step="0.01" required></div>
+<div><label for="cakeQty">Quantidade</label><input id="cakeQty" type="number" min="0" step="1" value="1" required></div>
+</div>
+<label for="cakePhoto">Foto do bolo (opcional)</label><input id="cakePhoto" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif">
+<img id="cakePreview" class="preview hidden" alt="Prévia da foto">
+<p class="muted">Fotos JPG, PNG ou WebP de até 5 MB.</p>
+<label style="display:flex;gap:10px;align-items:center"><input id="cakePublished" type="checkbox" style="width:auto"> Publicar na vitrine</label>
+<div class="actions"><button type="submit" id="saveCake">Salvar bolo</button><button type="button" id="cancelCake" class="secondary">Limpar formulário</button></div>
+</form>
+</section>
+<section class="card"><div class="row"><h2>Bolos cadastrados</h2><button type="button" id="refreshCakes" class="secondary">Atualizar</button></div><div id="cakeList" class="empty">Carregando bolos...</div></section>
+</div>
+<div id="reservationsArea" class="hidden">
+<section class="card"><div class="row"><h2>📩 Solicitações de reserva</h2><button type="button" class="secondary" id="refreshReservations">Atualizar</button></div>
+<p class="muted">Solicitações pendentes não bloqueiam estoque. Ao confirmar, uma unidade será descontada com segurança. Confirme a disponibilidade antes de responder ao cliente.</p>
+<div class="filters"><select id="reservationFilter" aria-label="Filtrar reservas"><option value="">Todos os status</option><option>Aguardando confirmação</option><option>Confirmada</option><option>Recusada</option><option>Cancelada</option></select></div>
+<div id="reservationList" class="empty">Carregando reservas...</div></section>
+</div>
+<section class="card"><h2>MeuDoce</h2><p class="muted">Os pedidos são carregados do Supabase. As encomendas já são recebidas automaticamente. A vitrine de pronta entrega já está conectada à página inicial.</p><a class="button" href="./">Voltar ao MeuDoce</a></section>
+</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+'use strict';
+const SUPABASE_URL='https://exspoxvpwtcsefocacdy.supabase.co';
+const SUPABASE_KEY='sb_publishable_GIUoestv5b1zC1l83oTxOA_gJOoHYfF';
+const $=id=>document.getElementById(id);
+const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const STATUSES=['Aguardando avaliação','Aprovado','Em produção','Pronto para retirada','Concluído','Recusado'];
+const APPROVED=['Aprovado','Em produção','Pronto para retirada','Concluído'];
+let db,orders=[],cakes=[],reservations=[],authorized=false;
+function notice(msg,type=''){const el=$('message');el.textContent=msg;el.className='notice'+(type?' '+type:'');}
+function clearNotice(){$('message').classList.add('hidden');}
+function node(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=String(text);return e;}
+function showLogin(){$('adminArea').classList.add('hidden');$('loginArea').classList.remove('hidden');$('password').value='';authorized=false;orders=[];cakes=[];reservations=[];}
+function showAdmin(email){$('loginArea').classList.add('hidden');$('adminArea').classList.remove('hidden');$('userEmail').textContent=email||'Administradora';}
+async function verifyAdmin(user){
+  const {data,error}=await db.from('administradores').select('usuario_id').eq('usuario_id',user.id).maybeSingle();
+  if(error)throw error;
+  return !!data;
+}
+async function checkSession(){
+  const {data,error}=await db.auth.getUser();
+  if(error||!data.user){showLogin();return;}
+  try{
+    if(!await verifyAdmin(data.user)){await db.auth.signOut();showLogin();notice('Esta conta não possui autorização para acessar o painel.','error');return;}
+    authorized=true;showAdmin(data.user.email);clearNotice();await loadOrders();await loadCakes();await loadReservations();
+  }catch(e){showLogin();notice('Não foi possível validar o acesso: '+e.message,'error');}
+}
+async function loadOrders(){
+  if(!authorized)return;
+  $('refresh').disabled=true;
+  const {data,error}=await db.from('pedidos').select('*').order('criado_em',{ascending:false}).limit(500);
+  $('refresh').disabled=false;
+  if(error){notice('Erro ao carregar pedidos: '+error.message,'error');return;}
+  orders=data||[];clearNotice();render();renderAgenda();
+}
+async function updateOrder(id,changes){
+  if(!authorized)return false;
+  const {data,error}=await db.from('pedidos').update(changes).eq('id',id).select('id');
+  if(error||!data?.length){notice('Não foi possível salvar a alteração. '+(error?.message||'Permissão não confirmada.'),'error');await loadOrders();return false;}
+  const o=orders.find(x=>x.id===id);if(o)Object.assign(o,changes);
+  notice('Alteração salva no Supabase.','success');render();renderAgenda();return true;
+}
+function render(){
+  $('total').textContent=orders.length;
+  $('pending').textContent=orders.filter(x=>x.status==='Aguardando avaliação').length;
+  $('approved').textContent=orders.filter(x=>APPROVED.includes(x.status)).length;
+  $('revenue').textContent=money(orders.filter(x=>APPROVED.includes(x.status)).reduce((s,x)=>s+Number(x.preco_final??x.preco_base??0),0));
+  const root=$('orders');root.replaceChildren();root.className='';
+  const q=$('search').value.toLowerCase().trim(),f=$('filter').value;
+  const shown=orders.filter(x=>(!f||x.status===f)&&(!q||[x.cliente_nome,x.id,x.decoracao,x.cliente_whatsapp].join(' ').toLowerCase().includes(q)));
+  if(!shown.length){root.append(node('div','empty','Nenhum pedido encontrado.'));return;}
+  shown.forEach(o=>{
+    const wrap=node('article','order'),top=node('div','row');
+    top.append(node('h3','',o.cliente_nome||'Cliente'),node('span','tag',o.status||'Sem status'));
+    wrap.append(top,node('p','muted',`Pedido ${o.id} · Retirada: ${o.data_retirada||'A definir'}`),node('p','',`${o.peso_kg??'—'} kg · Massa ${o.massa||'—'} · Formato ${o.formato||'—'} · ${o.recheio_1||'—'} + ${o.recheio_2||'—'}`),node('p','',`WhatsApp: ${o.cliente_whatsapp||'Não informado'}`),node('p','',`Decoração: ${o.decoracao||'Não informada'}`),node('p','',`Preço base: ${money(o.preco_base)}`));
+    const priceLabel=node('label','','Preço final (R$)'),price=node('input');price.type='number';price.min='0';price.step='0.01';price.value=o.preco_final??o.preco_base??0;
+    price.addEventListener('change',async()=>{const val=Number(price.value);if(!Number.isFinite(val)||val<0){notice('Informe um preço válido.','error');return;}price.disabled=true;await updateOrder(o.id,{preco_final:val});});priceLabel.append(price);wrap.append(priceLabel);
+    const noteLabel=node('label','','Observações internas'),note=node('textarea');note.value=o.observacoes_internas||'';
+    note.addEventListener('change',async()=>{note.disabled=true;await updateOrder(o.id,{observacoes_internas:note.value});});noteLabel.append(note);wrap.append(noteLabel);
+    const statusLabel=node('label','','Situação'),sel=node('select');STATUSES.forEach(s=>{const opt=node('option','',s);opt.value=s;sel.append(opt)});sel.value=o.status||STATUSES[0];
+    sel.addEventListener('change',async()=>{sel.disabled=true;await updateOrder(o.id,{status:sel.value});});statusLabel.append(sel);wrap.append(statusLabel);
+    const actions=node('div','actions'),copy=node('button','secondary','Copiar resumo');copy.type='button';
+    copy.onclick=()=>{const summary=`MeuDoce - Pedido ${o.id}\nCliente: ${o.cliente_nome}\nStatus: ${o.status}\nPreço final: ${money(o.preco_final??o.preco_base)}\nRetirada: ${o.data_retirada||'A definir'}`;if(navigator.clipboard?.writeText){navigator.clipboard.writeText(summary).then(()=>notice('Resumo copiado.','success')).catch(()=>prompt('Copie o resumo:',summary));}else prompt('Copie o resumo:',summary);};
+    actions.append(copy);wrap.append(actions);root.append(wrap);
+  });
+}
+
+
+// Agenda mensal: visualização dos pedidos existentes, sem alterar banco de dados.
+const agendaToday=new Date();
+let agendaYear=agendaToday.getFullYear(),agendaMonth=agendaToday.getMonth();
+let agendaSelected=[agendaYear,String(agendaMonth+1).padStart(2,'0'),String(agendaToday.getDate()).padStart(2,'0')].join('-');
+function agendaDate(y,m,d){return [y,String(m+1).padStart(2,'0'),String(d).padStart(2,'0')].join('-');}
+function agendaTime(o){const t=o.horario_retirada||o.horario_solicitado;return t?String(t).slice(0,5):'Sem horário';}
+function renderAgenda(){
+  if(!$('agendaGrid'))return;
+  $('agendaMonth').textContent=new Date(agendaYear,agendaMonth,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  const grid=$('agendaGrid');grid.replaceChildren();
+  const first=new Date(agendaYear,agendaMonth,1).getDay();
+  const days=new Date(agendaYear,agendaMonth+1,0).getDate();
+  const today=agendaDate(agendaToday.getFullYear(),agendaToday.getMonth(),agendaToday.getDate());
+  for(let i=0;i<Math.ceil((first+days)/7)*7;i++){
+    const d=i-first+1,inside=d>=1&&d<=days;
+    const key=inside?agendaDate(agendaYear,agendaMonth,d):'';
+    const items=inside?orders.filter(o=>o.data_retirada===key&&o.status!=='Recusado'):[];
+    const b=node('button','agenda-day'+(!inside?' other':'')+(key===agendaSelected?' selected':'')+(key===today?' today':''));b.type='button';b.disabled=!inside;
+    b.append(node('strong','',inside?d:' '));
+    if(items.length){const sm=node('small');sm.append(node('span','dot'),document.createTextNode(items.length+' '+(items.length===1?'pedido':'pedidos')));b.append(sm);}
+    if(inside)b.onclick=()=>{agendaSelected=key;renderAgenda();};
+    grid.append(b);
+  }
+  const dayOrders=orders.filter(o=>o.data_retirada===agendaSelected&&o.status!=='Recusado').sort((a,b)=>agendaTime(a).localeCompare(agendaTime(b),'pt-BR'));
+  const [y,m,d]=agendaSelected.split('-');$('agendaDayTitle').textContent=`Encomendas de ${d}/${m}/${y}`;
+  const kg=dayOrders.reduce((sum,o)=>sum+Number(o.peso_kg||0),0);
+  $('agendaStats').textContent=`${dayOrders.length} ${dayOrders.length===1?'encomenda':'encomendas'} · ${kg.toLocaleString('pt-BR')} kg previstos · ${dayOrders.filter(o=>o.status==='Aguardando avaliação').length} aguardando avaliação`;
+  const list=$('agendaList');list.replaceChildren();
+  if(!dayOrders.length){list.append(node('p','muted','Nenhuma encomenda registrada para este dia.'));return;}
+  dayOrders.forEach(o=>{
+    const el=node('article','agenda-item');
+    el.append(node('h3','',`${agendaTime(o)} · ${o.cliente_nome||'Cliente'}`));
+    el.append(node('p','',`${o.peso_kg??'—'} kg · Massa ${o.massa||'—'} · ${o.recheio_1||'—'} + ${o.recheio_2||'—'}`));
+    el.append(node('p','muted',`Situação: ${o.status||'A definir'} · Valor: ${money(o.preco_final??o.preco_base)}`));
+    if(o.decoracao)el.append(node('p','muted',`Decoração: ${o.decoracao}`));
+    const actions=node('div','actions'),btn=node('button','secondary','Abrir encomenda');btn.type='button';
+    btn.onclick=()=>{$('search').value=o.id;$('filter').value='';switchTab('orders');render();};
+    actions.append(btn);el.append(actions);list.append(el);
+  });
+}
+function agendaMove(delta){const d=new Date(agendaYear,agendaMonth+delta,1);agendaYear=d.getFullYear();agendaMonth=d.getMonth();agendaSelected=agendaDate(agendaYear,agendaMonth,1);renderAgenda();}
+$('agendaPrev').onclick=()=>agendaMove(-1);
+$('agendaNext').onclick=()=>agendaMove(1);
+
+function switchTab(tab){
+  $('ordersArea').classList.toggle('hidden',tab!=='orders');
+  $('agendaArea').classList.toggle('hidden',tab!=='agenda');
+  if(tab==='agenda')renderAgenda();
+  $('cakesArea').classList.toggle('hidden',tab!=='cakes');
+  $('reservationsArea').classList.toggle('hidden',tab!=='reservations');
+  $('tabOrders').classList.toggle('active',tab==='orders');
+  $('tabAgenda').classList.toggle('active',tab==='agenda');
+  $('tabCakes').classList.toggle('active',tab==='cakes');
+  $('tabReservations').classList.toggle('active',tab==='reservations');
+  if(tab==='reservations')loadReservations();
+}
+$('tabOrders').onclick=()=>switchTab('orders');
+$('tabAgenda').onclick=()=>switchTab('agenda');
+$('tabCakes').onclick=()=>switchTab('cakes');
+$('tabReservations').onclick=()=>switchTab('reservations');
+function resetCakeForm(){
+  $('cakeForm').reset();$('cakeId').value='';$('cakeQty').value=1;
+  $('cakePreview').src='';$('cakePreview').classList.add('hidden');
+  $('saveCake').textContent='Salvar bolo';
+}
+$('cancelCake').onclick=resetCakeForm;
+$('cakePhoto').onchange=()=>{
+  const file=$('cakePhoto').files[0];
+  if(!file){$('cakePreview').classList.add('hidden');return;}
+  if(file.size>5*1024*1024){notice('A foto deve ter no máximo 5 MB.','error');$('cakePhoto').value='';return;}
+  $('cakePreview').src=URL.createObjectURL(file);
+  $('cakePreview').classList.remove('hidden');
+};
+async function loadCakes(){
+  if(!authorized)return;
+  const {data,error}=await db.from('bolos_pronta_entrega').select('*').order('criado_em',{ascending:false});
+  if(error){notice('Erro ao carregar bolos: '+error.message,'error');return;}
+  cakes=data||[];renderCakes();
+}
+function renderCakes(){
+  const root=$('cakeList');root.replaceChildren();root.className='';
+  if(!cakes.length){root.append(node('div','empty','Nenhum bolo cadastrado ainda.'));return;}
+  cakes.forEach(c=>{
+    const item=node('article','product-item');
+    if(c.foto_url){const img=node('img','product-photo');img.src=c.foto_url;img.alt=c.nome;img.loading='lazy';item.append(img);}
+    const info=node('div','product-info');
+    info.append(node('h3','',c.nome),node('p','muted',c.descricao||'Sem descrição'),
+      node('p','',`${money(c.preco)} · ${c.quantidade} unidade(s)`),
+      node('p','tag',c.publicado?(c.quantidade>0?'Publicado':'Esgotado'):'Oculto'));
+    const actions=node('div','product-actions');
+    const edit=node('button','secondary','Editar');
+    edit.type='button';edit.onclick=()=>{
+      $('cakeId').value=c.id;$('cakeName').value=c.nome;$('cakeDescription').value=c.descricao||'';
+      $('cakePrice').value=c.preco;$('cakeQty').value=c.quantidade;$('cakePublished').checked=c.publicado;
+      $('cakePhoto').value='';
+      if(c.foto_url){$('cakePreview').src=c.foto_url;$('cakePreview').classList.remove('hidden');}
+      else $('cakePreview').classList.add('hidden');
+      $('saveCake').textContent='Salvar alterações';
+      $('cakeForm').scrollIntoView({behavior:'smooth',block:'start'});
+    };
+    const toggle=node('button','secondary',c.publicado?'Ocultar':'Publicar');
+    toggle.type='button';toggle.onclick=async()=>{
+      toggle.disabled=true;
+      const {error}=await db.from('bolos_pronta_entrega').update({publicado:!c.publicado,atualizado_em:new Date().toISOString()}).eq('id',c.id);
+      if(error)notice('Erro: '+error.message,'error');
+      else{notice('Disponibilidade atualizada.','success');await loadCakes();}
+      toggle.disabled=false;
+    };
+    const sold=node('button','secondary','Esgotado');
+    sold.type='button';sold.disabled=c.quantidade===0;
+    sold.onclick=async()=>{
+      sold.disabled=true;
+      const {error}=await db.from('bolos_pronta_entrega').update({quantidade:0,atualizado_em:new Date().toISOString()}).eq('id',c.id);
+      if(error)notice('Erro: '+error.message,'error');
+      else{notice('Bolo marcado como esgotado.','success');await loadCakes();}
+      sold.disabled=false;
+    };
+    actions.append(edit,toggle,sold);info.append(actions);item.append(info);root.append(item);
+  });
+}
+$('refreshCakes').onclick=loadCakes;
+$('cakeForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(!authorized)return;
+  const btn=$('saveCake');btn.disabled=true;
+  try{
+    const name=$('cakeName').value.trim(),price=Number($('cakePrice').value),qty=Number($('cakeQty').value);
+    if(!name||!Number.isFinite(price)||price<=0||!Number.isInteger(qty)||qty<0)throw Error('Confira nome, preço e quantidade.');
+    let photoUrl=cakes.find(x=>x.id===$('cakeId').value)?.foto_url||null;
+    const file=$('cakePhoto').files[0];
+    if(file){
+      if(file.size>5*1024*1024)throw Error('Foto acima de 5 MB.');
+      if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('Use foto JPG, PNG ou WebP.');
+      const ext=file.type==='image/png'?'png':file.type==='image/webp'?'webp':'jpg';
+      const path=`bolos/${crypto.randomUUID()}.${ext}`;
+      const {error:uploadError}=await db.storage.from('fotos-bolos').upload(path,file,{contentType:file.type,upsert:false});
+      if(uploadError)throw Error('Não foi possível enviar a foto. Configure o bucket fotos-bolos: '+uploadError.message);
+      photoUrl=db.storage.from('fotos-bolos').getPublicUrl(path).data.publicUrl;
+    }
+    const payload={nome:name,descricao:$('cakeDescription').value.trim(),preco:price,quantidade:qty,
+      foto_url:photoUrl,publicado:$('cakePublished').checked,atualizado_em:new Date().toISOString()};
+    const id=$('cakeId').value;
+    const result=id?await db.from('bolos_pronta_entrega').update(payload).eq('id',id).select('id'):
+      await db.from('bolos_pronta_entrega').insert(payload).select('id');
+    if(result.error||!result.data?.length)throw Error(result.error?.message||'Não foi possível confirmar o salvamento.');
+    resetCakeForm();await loadCakes();notice('Bolo salvo com sucesso!','success');
+  }catch(err){notice('Erro ao salvar bolo: '+err.message,'error');}
+  finally{btn.disabled=false;}
+});
+
+
+async function loadReservations(){
+  if(!authorized)return;
+  const btn=$('refreshReservations');btn.disabled=true;
+  try{
+    const {data,error}=await db.from('reservas_pronta_entrega').select('id,bolo_id,cliente_nome,cliente_whatsapp,quantidade,status,criado_em,confirmado_em').order('criado_em',{ascending:false}).limit(500);
+    if(error)throw error;
+    reservations=data||[];
+    $('reservationCount').textContent=reservations.filter(r=>r.status==='Aguardando confirmação').length||'';
+    await loadCakes();
+    renderReservations();
+  }catch(err){notice('Erro ao carregar reservas: '+err.message,'error');}
+  finally{btn.disabled=false;}
+}
+function renderReservations(){
+  const root=$('reservationList');root.replaceChildren();root.className='';
+  const filter=$('reservationFilter').value;
+  const visible=reservations.filter(r=>!filter||r.status===filter);
+  if(!visible.length){root.append(node('div','empty','Nenhuma reserva encontrada.'));return;}
+  visible.forEach(r=>{
+    const cake=cakes.find(c=>c.id===r.bolo_id);
+    const item=node('article','order');
+    const top=node('div','row');top.append(node('h3','',r.cliente_nome||'Cliente'),node('span','tag',r.status));item.append(top);
+    item.append(node('p','',`🍰 ${cake?.nome||'Bolo não encontrado'} · ${cake?money(cake.preco):'Preço indisponível'}`));
+    item.append(node('p','muted',`Solicitada em ${new Date(r.criado_em).toLocaleString('pt-BR')} · Protocolo ${r.id.slice(0,8)}`));
+    item.append(node('p','',`WhatsApp: ${r.cliente_whatsapp}`));
+    if(r.status==='Aguardando confirmação'){
+      const actions=node('div','actions');
+      const confirm=node('button','','Confirmar reserva');confirm.type='button';
+      const reject=node('button','secondary','Recusar');reject.type='button';
+      const decide=async yes=>{
+        if(!window.confirm(yes?'Confirmar a reserva e descontar 1 unidade do estoque?':'Recusar esta solicitação?'))return;
+        confirm.disabled=true;reject.disabled=true;
+        const {data,error}=await db.rpc('decidir_reserva_meudoce',{p_reserva_id:r.id,p_confirmar:yes});
+        if(error){notice('Não foi possível concluir: '+error.message,'error');confirm.disabled=false;reject.disabled=false;await loadReservations();return;}
+        notice(data||'Reserva atualizada.','success');await loadReservations();
+      };
+      confirm.onclick=()=>decide(true);reject.onclick=()=>decide(false);
+      actions.append(confirm,reject);item.append(actions);
+    }
+    const whatsapp=node('button','secondary',r.status==='Confirmada'?'📲 Enviar confirmação pelo WhatsApp':r.status==='Recusada'?'📲 Avisar recusa pelo WhatsApp':'Conversar pelo WhatsApp');
+    whatsapp.type='button';
+    whatsapp.onclick=()=>{
+      const digits=(r.cliente_whatsapp||'').replace(/\D/g,'');
+      const number=digits.length===11||digits.length===10?'55'+digits:digits;
+      if(number.length<12||number.length>13){notice('Número de WhatsApp inválido para abrir a conversa.','error');return;}
+      const bolo=cake?.nome||'bolo solicitado';
+      let message;
+      if(r.status==='Confirmada'){
+        message=`Olá, ${r.cliente_nome}! 🍰 Aqui é a Juliana, da Um Doce de Amor. Sua reserva do ${bolo} foi CONFIRMADA!\n\nValor: ${cake?money(cake.preco):'a confirmar'}\nProtocolo: ${r.id.slice(0,8)}\n\nVamos combinar o horário de retirada? Obrigada pela preferência! ❤️`;
+      }else if(r.status==='Recusada'){
+        message=`Olá, ${r.cliente_nome}! Aqui é a Juliana, da Um Doce de Amor. Infelizmente não foi possível confirmar sua solicitação do ${bolo} (protocolo ${r.id.slice(0,8)}). Agradeço pelo interesse! ❤️`;
+      }else{
+        message=`Olá, ${r.cliente_nome}! Aqui é a Juliana, da Um Doce de Amor. Recebi sua solicitação do ${bolo} (protocolo ${r.id.slice(0,8)}). Em breve confirmarei a disponibilidade.`;
+      }
+      window.open('https://wa.me/'+number+'?text='+encodeURIComponent(message),'_blank','noopener,noreferrer');
+    };
+    const actions=node('div','actions');actions.append(whatsapp);item.append(actions);
+    root.append(item);
+  });
+}
+$('refreshReservations').onclick=loadReservations;
+$('reservationFilter').onchange=renderReservations;
+
+$('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault();clearNotice();$('loginBtn').disabled=true;
+  try{const {error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)throw error;await checkSession();}
+  catch(e){notice('Não foi possível entrar: '+e.message,'error');}
+  finally{$('loginBtn').disabled=false;}
+});
+$('logout').onclick=async()=>{await db.auth.signOut();showLogin();clearNotice();};
+$('search').oninput=render;$('filter').onchange=render;$('refresh').onclick=loadOrders;
+$('export').onclick=()=>{const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify({app:'MeuDoce',type:'pedidos',exportado_em:new Date().toISOString(),orders},null,2)],{type:'application/json'}));a.href=url;a.download='meudoce-pedidos-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);};
+if(!window.supabase?.createClient){notice('Não foi possível carregar a biblioteca Supabase. Verifique sua conexão.','error');$('loginBtn').disabled=true;}
+else{db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);checkSession();}
+</script>
+</body></html>
