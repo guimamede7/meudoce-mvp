@@ -29,7 +29,7 @@
 </section>
 <div id="adminArea" class="hidden">
 <div class="row" style="margin-bottom:14px;flex-wrap:wrap"><span id="userEmail" class="muted"></span><button id="logout" class="secondary">Sair</button></div>
-<nav class="tabbar" aria-label="Áreas do painel"><button type="button" id="tabOrders" class="active">📋 Encomendas</button><button type="button" id="tabCakes">🍰 Pronta Entrega</button></nav>
+<nav class="tabbar" aria-label="Áreas do painel"><button type="button" id="tabOrders" class="active">📋 Encomendas</button><button type="button" id="tabCakes">🍰 Pronta Entrega</button><button type="button" id="tabReservations">📩 Reservas <span id="reservationCount"></span></button></nav>
 <div id="ordersArea">
 <section class="grid"><div class="card"><div class="muted">Pedidos</div><div id="total" class="metric">0</div></div><div class="card"><div class="muted">Aguardando</div><div id="pending" class="metric">0</div></div><div class="card"><div class="muted">Aprovados</div><div id="approved" class="metric">0</div></div><div class="card"><div class="muted">Valor aprovado</div><div id="revenue" class="metric">R$ 0</div></div></section>
 <section class="card"><h2>Pedidos e orçamentos</h2><div class="filters"><input id="search" placeholder="Buscar cliente ou pedido" aria-label="Buscar pedidos"><select id="filter" aria-label="Filtrar status"><option value="">Todos os status</option><option>Aguardando avaliação</option><option>Aprovado</option><option>Em produção</option><option>Pronto para retirada</option><option>Concluído</option><option>Recusado</option></select></div><div class="actions"><button id="refresh" class="secondary">Atualizar pedidos</button><button id="export" class="secondary">Exportar backup</button></div><div id="orders" class="empty">Carregando pedidos...</div></section>
@@ -37,7 +37,7 @@
 <div id="cakesArea" class="hidden">
 <section class="card">
 <h2>🍰 Gerenciar Pronta Entrega</h2>
-<p class="muted">Cadastre os bolos disponíveis. Somente produtos publicados e com estoque aparecem para clientes quando a vitrine estiver pronta.</p>
+<p class="muted">Cadastre os bolos disponíveis. Somente produtos publicados e com estoque aparecem para clientes.</p>
 <form id="cakeForm">
 <input type="hidden" id="cakeId">
 <label for="cakeName">Nome do bolo</label><input id="cakeName" maxlength="100" required placeholder="Ex.: Bolo de chocolate">
@@ -48,14 +48,20 @@
 </div>
 <label for="cakePhoto">Foto do bolo (opcional)</label><input id="cakePhoto" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif">
 <img id="cakePreview" class="preview hidden" alt="Prévia da foto">
-<p class="muted">Fotos serão armazenadas no Supabase. Antes de enviar fotos, precisaremos configurar o armazenamento na próxima etapa.</p>
+<p class="muted">Fotos JPG, PNG ou WebP de até 5 MB.</p>
 <label style="display:flex;gap:10px;align-items:center"><input id="cakePublished" type="checkbox" style="width:auto"> Publicar na vitrine</label>
 <div class="actions"><button type="submit" id="saveCake">Salvar bolo</button><button type="button" id="cancelCake" class="secondary">Limpar formulário</button></div>
 </form>
 </section>
 <section class="card"><div class="row"><h2>Bolos cadastrados</h2><button type="button" id="refreshCakes" class="secondary">Atualizar</button></div><div id="cakeList" class="empty">Carregando bolos...</div></section>
 </div>
-<section class="card"><h2>MeuDoce</h2><p class="muted">Os pedidos são carregados do Supabase. As encomendas já são recebidas automaticamente. A vitrine de pronta entrega será conectada à página inicial em uma próxima etapa.</p><a class="button" href="./">Voltar ao MeuDoce</a></section>
+<div id="reservationsArea" class="hidden">
+<section class="card"><div class="row"><h2>📩 Solicitações de reserva</h2><button type="button" class="secondary" id="refreshReservations">Atualizar</button></div>
+<p class="muted">Solicitações pendentes não bloqueiam estoque. Ao confirmar, uma unidade será descontada com segurança. Confirme a disponibilidade antes de responder ao cliente.</p>
+<div class="filters"><select id="reservationFilter" aria-label="Filtrar reservas"><option value="">Todos os status</option><option>Aguardando confirmação</option><option>Confirmada</option><option>Recusada</option><option>Cancelada</option></select></div>
+<div id="reservationList" class="empty">Carregando reservas...</div></section>
+</div>
+<section class="card"><h2>MeuDoce</h2><p class="muted">Os pedidos são carregados do Supabase. As encomendas já são recebidas automaticamente. A vitrine de pronta entrega já está conectada à página inicial.</p><a class="button" href="./">Voltar ao MeuDoce</a></section>
 </div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -67,11 +73,11 @@ const $=id=>document.getElementById(id);
 const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const STATUSES=['Aguardando avaliação','Aprovado','Em produção','Pronto para retirada','Concluído','Recusado'];
 const APPROVED=['Aprovado','Em produção','Pronto para retirada','Concluído'];
-let db,orders=[],cakes=[],authorized=false;
+let db,orders=[],cakes=[],reservations=[],authorized=false;
 function notice(msg,type=''){const el=$('message');el.textContent=msg;el.className='notice'+(type?' '+type:'');}
 function clearNotice(){$('message').classList.add('hidden');}
 function node(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=String(text);return e;}
-function showLogin(){$('adminArea').classList.add('hidden');$('loginArea').classList.remove('hidden');$('password').value='';authorized=false;orders=[];cakes=[];}
+function showLogin(){$('adminArea').classList.add('hidden');$('loginArea').classList.remove('hidden');$('password').value='';authorized=false;orders=[];cakes=[];reservations=[];}
 function showAdmin(email){$('loginArea').classList.add('hidden');$('adminArea').classList.remove('hidden');$('userEmail').textContent=email||'Administradora';}
 async function verifyAdmin(user){
   const {data,error}=await db.from('administradores').select('usuario_id').eq('usuario_id',user.id).maybeSingle();
@@ -83,7 +89,7 @@ async function checkSession(){
   if(error||!data.user){showLogin();return;}
   try{
     if(!await verifyAdmin(data.user)){await db.auth.signOut();showLogin();notice('Esta conta não possui autorização para acessar o painel.','error');return;}
-    authorized=true;showAdmin(data.user.email);clearNotice();await loadOrders();await loadCakes();
+    authorized=true;showAdmin(data.user.email);clearNotice();await loadOrders();await loadCakes();await loadReservations();
   }catch(e){showLogin();notice('Não foi possível validar o acesso: '+e.message,'error');}
 }
 async function loadOrders(){
@@ -129,11 +135,15 @@ function render(){
 function switchTab(tab){
   $('ordersArea').classList.toggle('hidden',tab!=='orders');
   $('cakesArea').classList.toggle('hidden',tab!=='cakes');
+  $('reservationsArea').classList.toggle('hidden',tab!=='reservations');
   $('tabOrders').classList.toggle('active',tab==='orders');
   $('tabCakes').classList.toggle('active',tab==='cakes');
+  $('tabReservations').classList.toggle('active',tab==='reservations');
+  if(tab==='reservations')loadReservations();
 }
 $('tabOrders').onclick=()=>switchTab('orders');
 $('tabCakes').onclick=()=>switchTab('cakes');
+$('tabReservations').onclick=()=>switchTab('reservations');
 function resetCakeForm(){
   $('cakeForm').reset();$('cakeId').value='';$('cakeQty').value=1;
   $('cakePreview').src='';$('cakePreview').classList.add('hidden');
@@ -223,6 +233,61 @@ $('cakeForm').addEventListener('submit',async e=>{
   }catch(err){notice('Erro ao salvar bolo: '+err.message,'error');}
   finally{btn.disabled=false;}
 });
+
+
+async function loadReservations(){
+  if(!authorized)return;
+  const btn=$('refreshReservations');btn.disabled=true;
+  try{
+    const {data,error}=await db.from('reservas_pronta_entrega').select('id,bolo_id,cliente_nome,cliente_whatsapp,quantidade,status,criado_em,confirmado_em').order('criado_em',{ascending:false}).limit(500);
+    if(error)throw error;
+    reservations=data||[];
+    $('reservationCount').textContent=reservations.filter(r=>r.status==='Aguardando confirmação').length||'';
+    await loadCakes();
+    renderReservations();
+  }catch(err){notice('Erro ao carregar reservas: '+err.message,'error');}
+  finally{btn.disabled=false;}
+}
+function renderReservations(){
+  const root=$('reservationList');root.replaceChildren();root.className='';
+  const filter=$('reservationFilter').value;
+  const visible=reservations.filter(r=>!filter||r.status===filter);
+  if(!visible.length){root.append(node('div','empty','Nenhuma reserva encontrada.'));return;}
+  visible.forEach(r=>{
+    const cake=cakes.find(c=>c.id===r.bolo_id);
+    const item=node('article','order');
+    const top=node('div','row');top.append(node('h3','',r.cliente_nome||'Cliente'),node('span','tag',r.status));item.append(top);
+    item.append(node('p','',`🍰 ${cake?.nome||'Bolo não encontrado'} · ${cake?money(cake.preco):'Preço indisponível'}`));
+    item.append(node('p','muted',`Solicitada em ${new Date(r.criado_em).toLocaleString('pt-BR')} · Protocolo ${r.id.slice(0,8)}`));
+    item.append(node('p','',`WhatsApp: ${r.cliente_whatsapp}`));
+    if(r.status==='Aguardando confirmação'){
+      const actions=node('div','actions');
+      const confirm=node('button','','Confirmar reserva');confirm.type='button';
+      const reject=node('button','secondary','Recusar');reject.type='button';
+      const decide=async yes=>{
+        if(!window.confirm(yes?'Confirmar a reserva e descontar 1 unidade do estoque?':'Recusar esta solicitação?'))return;
+        confirm.disabled=true;reject.disabled=true;
+        const {data,error}=await db.rpc('decidir_reserva_meudoce',{p_reserva_id:r.id,p_confirmar:yes});
+        if(error){notice('Não foi possível concluir: '+error.message,'error');confirm.disabled=false;reject.disabled=false;await loadReservations();return;}
+        notice(data||'Reserva atualizada.','success');await loadReservations();
+      };
+      confirm.onclick=()=>decide(true);reject.onclick=()=>decide(false);
+      actions.append(confirm,reject);item.append(actions);
+    }
+    const whatsapp=node('button','secondary','Conversar pelo WhatsApp');whatsapp.type='button';
+    whatsapp.onclick=()=>{
+      const digits=(r.cliente_whatsapp||'').replace(/\D/g,'');
+      const number=digits.length===11||digits.length===10?'55'+digits:digits;
+      const message=`Olá, ${r.cliente_nome}! Aqui é a Juliana, da Um Doce de Amor. Sobre sua solicitação do bolo ${cake?.nome||''}: ${r.status}. Vamos combinar a retirada?`;
+      if(number.length<12||number.length>13){notice('Número de WhatsApp inválido para abrir a conversa.','error');return;}
+      window.open('https://wa.me/'+number+'?text='+encodeURIComponent(message),'_blank','noopener,noreferrer');
+    };
+    const actions=node('div','actions');actions.append(whatsapp);item.append(actions);
+    root.append(item);
+  });
+}
+$('refreshReservations').onclick=loadReservations;
+$('reservationFilter').onchange=renderReservations;
 
 $('loginForm').addEventListener('submit',async e=>{
   e.preventDefault();clearNotice();$('loginBtn').disabled=true;
