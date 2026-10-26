@@ -17,6 +17,17 @@
 .product-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .product-actions button{font-size:13px;padding:8px 10px}
 .preview{max-width:180px;max-height:180px;object-fit:cover;border-radius:12px;margin-top:8px}
+
+.tabbar{flex-wrap:wrap}.tabbar button{min-width:135px}
+.agenda-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}.agenda-head button{width:auto}.agenda-head h2{margin:0;font-size:20px;text-align:center}
+.agenda-week,.agenda-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.agenda-week{text-align:center;color:#755966;font-size:12px;margin-bottom:7px}
+.agenda-day{min-width:0;min-height:66px;border:1px solid #ecd7df;border-radius:10px;background:#fff;text-align:left;padding:7px 5px;color:#49313d;cursor:pointer;font:inherit}
+.agenda-day.other{opacity:.35}.agenda-day.selected{border:2px solid #963e61;background:#fff0f5}.agenda-day.today{box-shadow:inset 0 0 0 1px #c97b9a}
+.agenda-day strong{display:block;font-size:14px}.agenda-day small{display:block;font-size:11px;margin-top:6px;color:#873756;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.agenda-day .dot{display:inline-block;width:7px;height:7px;background:#c97932;border-radius:50%;margin-right:3px}
+.agenda-item{border-top:1px solid #ecd7df;padding:14px 0}.agenda-item:first-child{border-top:0}.agenda-item p{margin:5px 0}.agenda-item .actions button{width:auto}
+.agenda-stats{background:#fff1f5;padding:12px;border-radius:12px;margin-bottom:12px;font-size:14px}
+@media(max-width:480px){.agenda-day{min-height:58px;padding:5px 3px}.agenda-day small{font-size:10px}.tabbar button{min-width:calc(50% - 5px)}}
 </style>
 </head>
 <body>
@@ -29,10 +40,16 @@
 </section>
 <div id="adminArea" class="hidden">
 <div class="row" style="margin-bottom:14px;flex-wrap:wrap"><span id="userEmail" class="muted"></span><button id="logout" class="secondary">Sair</button></div>
-<nav class="tabbar" aria-label="Áreas do painel"><button type="button" id="tabOrders" class="active">📋 Encomendas</button><button type="button" id="tabCakes">🍰 Pronta Entrega</button><button type="button" id="tabReservations">📩 Reservas <span id="reservationCount"></span></button></nav>
+<nav class="tabbar" aria-label="Áreas do painel"><button type="button" id="tabOrders" class="active">📋 Encomendas</button><button type="button" id="tabAgenda">📅 Agenda</button><button type="button" id="tabCakes">🍰 Pronta Entrega</button><button type="button" id="tabReservations">📩 Reservas <span id="reservationCount"></span></button></nav>
 <div id="ordersArea">
 <section class="grid"><div class="card"><div class="muted">Pedidos</div><div id="total" class="metric">0</div></div><div class="card"><div class="muted">Aguardando</div><div id="pending" class="metric">0</div></div><div class="card"><div class="muted">Aprovados</div><div id="approved" class="metric">0</div></div><div class="card"><div class="muted">Valor aprovado</div><div id="revenue" class="metric">R$ 0</div></div></section>
 <section class="card"><h2>Pedidos e orçamentos</h2><div class="filters"><input id="search" placeholder="Buscar cliente ou pedido" aria-label="Buscar pedidos"><select id="filter" aria-label="Filtrar status"><option value="">Todos os status</option><option>Aguardando avaliação</option><option>Aprovado</option><option>Em produção</option><option>Pronto para retirada</option><option>Concluído</option><option>Recusado</option></select></div><div class="actions"><button id="refresh" class="secondary">Atualizar pedidos</button><button id="export" class="secondary">Exportar backup</button></div><div id="orders" class="empty">Carregando pedidos...</div></section>
+</div>
+<div id="agendaArea" class="hidden">
+<section class="card"><div class="agenda-head"><button id="agendaPrev" type="button" class="secondary" aria-label="Mês anterior">‹</button><h2 id="agendaMonth">Agenda</h2><button id="agendaNext" type="button" class="secondary" aria-label="Próximo mês">›</button></div>
+<div class="agenda-week"><span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span></div><div id="agendaGrid" class="agenda-days"></div>
+<p class="muted">Toque em um dia para ver as encomendas. A contagem inclui pedidos pendentes; não limita a produção.</p></section>
+<section class="card"><h2 id="agendaDayTitle">Encomendas do dia</h2><div id="agendaStats" class="agenda-stats"></div><div id="agendaList"></div></section>
 </div>
 <div id="cakesArea" class="hidden">
 <section class="card">
@@ -98,14 +115,14 @@ async function loadOrders(){
   const {data,error}=await db.from('pedidos').select('*').order('criado_em',{ascending:false}).limit(500);
   $('refresh').disabled=false;
   if(error){notice('Erro ao carregar pedidos: '+error.message,'error');return;}
-  orders=data||[];clearNotice();render();
+  orders=data||[];clearNotice();render();renderAgenda();
 }
 async function updateOrder(id,changes){
   if(!authorized)return false;
   const {data,error}=await db.from('pedidos').update(changes).eq('id',id).select('id');
   if(error||!data?.length){notice('Não foi possível salvar a alteração. '+(error?.message||'Permissão não confirmada.'),'error');await loadOrders();return false;}
   const o=orders.find(x=>x.id===id);if(o)Object.assign(o,changes);
-  notice('Alteração salva no Supabase.','success');render();return true;
+  notice('Alteração salva no Supabase.','success');render();renderAgenda();return true;
 }
 function render(){
   $('total').textContent=orders.length;
@@ -132,16 +149,65 @@ function render(){
   });
 }
 
+
+// Agenda mensal: visualização dos pedidos existentes, sem alterar banco de dados.
+const agendaToday=new Date();
+let agendaYear=agendaToday.getFullYear(),agendaMonth=agendaToday.getMonth();
+let agendaSelected=[agendaYear,String(agendaMonth+1).padStart(2,'0'),String(agendaToday.getDate()).padStart(2,'0')].join('-');
+function agendaDate(y,m,d){return [y,String(m+1).padStart(2,'0'),String(d).padStart(2,'0')].join('-');}
+function agendaTime(o){const t=o.horario_retirada||o.horario_solicitado;return t?String(t).slice(0,5):'Sem horário';}
+function renderAgenda(){
+  if(!$('agendaGrid'))return;
+  $('agendaMonth').textContent=new Date(agendaYear,agendaMonth,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  const grid=$('agendaGrid');grid.replaceChildren();
+  const first=new Date(agendaYear,agendaMonth,1).getDay();
+  const days=new Date(agendaYear,agendaMonth+1,0).getDate();
+  const today=agendaDate(agendaToday.getFullYear(),agendaToday.getMonth(),agendaToday.getDate());
+  for(let i=0;i<Math.ceil((first+days)/7)*7;i++){
+    const d=i-first+1,inside=d>=1&&d<=days;
+    const key=inside?agendaDate(agendaYear,agendaMonth,d):'';
+    const items=inside?orders.filter(o=>o.data_retirada===key&&o.status!=='Recusado'):[];
+    const b=node('button','agenda-day'+(!inside?' other':'')+(key===agendaSelected?' selected':'')+(key===today?' today':''));b.type='button';b.disabled=!inside;
+    b.append(node('strong','',inside?d:' '));
+    if(items.length){const sm=node('small');sm.append(node('span','dot'),document.createTextNode(items.length+' '+(items.length===1?'pedido':'pedidos')));b.append(sm);}
+    if(inside)b.onclick=()=>{agendaSelected=key;renderAgenda();};
+    grid.append(b);
+  }
+  const dayOrders=orders.filter(o=>o.data_retirada===agendaSelected&&o.status!=='Recusado').sort((a,b)=>agendaTime(a).localeCompare(agendaTime(b),'pt-BR'));
+  const [y,m,d]=agendaSelected.split('-');$('agendaDayTitle').textContent=`Encomendas de ${d}/${m}/${y}`;
+  const kg=dayOrders.reduce((sum,o)=>sum+Number(o.peso_kg||0),0);
+  $('agendaStats').textContent=`${dayOrders.length} ${dayOrders.length===1?'encomenda':'encomendas'} · ${kg.toLocaleString('pt-BR')} kg previstos · ${dayOrders.filter(o=>o.status==='Aguardando avaliação').length} aguardando avaliação`;
+  const list=$('agendaList');list.replaceChildren();
+  if(!dayOrders.length){list.append(node('p','muted','Nenhuma encomenda registrada para este dia.'));return;}
+  dayOrders.forEach(o=>{
+    const el=node('article','agenda-item');
+    el.append(node('h3','',`${agendaTime(o)} · ${o.cliente_nome||'Cliente'}`));
+    el.append(node('p','',`${o.peso_kg??'—'} kg · Massa ${o.massa||'—'} · ${o.recheio_1||'—'} + ${o.recheio_2||'—'}`));
+    el.append(node('p','muted',`Situação: ${o.status||'A definir'} · Valor: ${money(o.preco_final??o.preco_base)}`));
+    if(o.decoracao)el.append(node('p','muted',`Decoração: ${o.decoracao}`));
+    const actions=node('div','actions'),btn=node('button','secondary','Abrir encomenda');btn.type='button';
+    btn.onclick=()=>{$('search').value=o.id;$('filter').value='';switchTab('orders');render();};
+    actions.append(btn);el.append(actions);list.append(el);
+  });
+}
+function agendaMove(delta){const d=new Date(agendaYear,agendaMonth+delta,1);agendaYear=d.getFullYear();agendaMonth=d.getMonth();agendaSelected=agendaDate(agendaYear,agendaMonth,1);renderAgenda();}
+$('agendaPrev').onclick=()=>agendaMove(-1);
+$('agendaNext').onclick=()=>agendaMove(1);
+
 function switchTab(tab){
   $('ordersArea').classList.toggle('hidden',tab!=='orders');
+  $('agendaArea').classList.toggle('hidden',tab!=='agenda');
+  if(tab==='agenda')renderAgenda();
   $('cakesArea').classList.toggle('hidden',tab!=='cakes');
   $('reservationsArea').classList.toggle('hidden',tab!=='reservations');
   $('tabOrders').classList.toggle('active',tab==='orders');
+  $('tabAgenda').classList.toggle('active',tab==='agenda');
   $('tabCakes').classList.toggle('active',tab==='cakes');
   $('tabReservations').classList.toggle('active',tab==='reservations');
   if(tab==='reservations')loadReservations();
 }
 $('tabOrders').onclick=()=>switchTab('orders');
+$('tabAgenda').onclick=()=>switchTab('agenda');
 $('tabCakes').onclick=()=>switchTab('cakes');
 $('tabReservations').onclick=()=>switchTab('reservations');
 function resetCakeForm(){
