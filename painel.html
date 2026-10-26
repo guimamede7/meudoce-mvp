@@ -29,7 +29,7 @@
 .agenda-stats{background:#fff1f5;padding:12px;border-radius:12px;margin-bottom:12px;font-size:14px}
 @media(max-width:480px){.agenda-day{min-height:58px;padding:5px 3px}.agenda-day small{font-size:10px}.tabbar button{min-width:calc(50% - 5px)}}
 
-.agenda-blocked{background:#fff0e6!important;border-color:#d58a52!important}.agenda-blocked small{color:#9b5127}.block-list{display:grid;gap:9px;margin-top:12px}.block-item{border:1px solid #edd2c4;background:#fff8f3;border-radius:10px;padding:12px}.block-item p{margin:5px 0}.block-form{background:#fff9fb;border:1px solid #f0dce5;border-radius:12px;padding:14px;margin-top:14px}.block-form .grid{grid-template-columns:repeat(2,minmax(0,1fr))}.block-hint{font-size:13px;color:#795d68}.agenda-capacity{font-weight:700;color:#963e61}
+.agenda-blocked{background:#fff0e6!important;border-color:#d58a52!important}.agenda-blocked small{color:#9b5127}.block-list{display:grid;gap:9px;margin-top:12px}.block-item{border:1px solid #edd2c4;background:#fff8f3;border-radius:10px;padding:12px}.block-item p{margin:5px 0}.block-form{background:#fff9fb;border:1px solid #f0dce5;border-radius:12px;padding:14px;margin-top:14px}.block-form .grid{grid-template-columns:repeat(2,minmax(0,1fr))}.block-hint{font-size:13px;color:#795d68}.payment-box{border:1px solid #e5c8d4;background:#fff7fa;padding:13px;border-radius:12px;margin:14px 0}.agenda-capacity{font-weight:700;color:#963e61}
 </style>
 </head>
 <body>
@@ -163,6 +163,35 @@ function render(){
     const fotosBox=node('div','reference-photos');const fotosBtn=node('button','secondary','📷 Ver fotos de referência');fotosBtn.type='button';fotosBtn.onclick=()=>mostrarFotosPedido(o.id,fotosBox);wrap.append(fotosBtn,fotosBox);
     const priceLabel=node('label','','Preço final (R$)'),price=node('input');price.type='number';price.min='0';price.step='0.01';price.value=o.preco_final??o.preco_base??0;
     price.addEventListener('change',async()=>{const val=Number(price.value);if(!Number.isFinite(val)||val<0){notice('Informe um preço válido.','error');return;}price.disabled=true;await updateOrder(o.id,{preco_final:val});});priceLabel.append(price);wrap.append(priceLabel);
+    const payBox=node('div','payment-box');
+    payBox.append(node('h3','','💳 Controle de pagamento'));
+    const payTypeLabel=node('label','','Forma de cobrança');
+    const payType=node('select');
+    [['sinal','Sinal + saldo na retirada'],['integral','Pagamento integral']].forEach(([v,t])=>{const opt=node('option','',t);opt.value=v;payType.append(opt);});
+    payType.value=o.pagamento_tipo==='integral'?'integral':'sinal';payTypeLabel.append(payType);payBox.append(payTypeLabel);
+    const signalLabel=node('label','','Valor do sinal solicitado (R$)');
+    const signal=node('input');signal.type='number';signal.min='0';signal.step='0.01';signal.value=o.pagamento_sinal??'';
+    signalLabel.append(signal);payBox.append(signalLabel);
+    const paidLabel=node('label','','Total recebido até agora (R$)');
+    const paid=node('input');paid.type='number';paid.min='0';paid.step='0.01';paid.value=o.pagamento_recebido??0;
+    paidLabel.append(paid);payBox.append(paidLabel);
+    const paySummary=node('p','muted');payBox.append(paySummary);
+    function refreshPayment(){
+      const total=Number(price.value),requested=payType.value==='integral'?total:Number(signal.value||0),received=Number(paid.value||0);
+      signalLabel.classList.toggle('hidden',payType.value==='integral');
+      paySummary.textContent=`Cobrança inicial: ${money(requested)} · Recebido: ${money(received)} · Saldo restante: ${money(Math.max(0,total-received))}`;
+    }
+    payType.onchange=refreshPayment;signal.oninput=refreshPayment;paid.oninput=refreshPayment;price.oninput=refreshPayment;refreshPayment();
+    const paySave=node('button','secondary','💾 Salvar pagamento');paySave.type='button';
+    paySave.onclick=async()=>{
+      const total=Number(price.value),received=Number(paid.value),requested=payType.value==='integral'?total:Number(signal.value);
+      if(!Number.isFinite(total)||total<=0||!Number.isFinite(received)||received<0||received>total||!Number.isFinite(requested)||requested<0||requested>total){notice('Confira o preço final, o sinal e o valor recebido. O recebido não pode superar o preço final.','error');return;}
+      if(payType.value==='sinal'&&requested<=0){notice('Informe um sinal maior que zero, ou selecione pagamento integral.','error');return;}
+      paySave.disabled=true;
+      const ok=await updateOrder(o.id,{pagamento_tipo:payType.value,pagamento_sinal:requested,pagamento_recebido:received});
+      if(!ok)paySave.disabled=false;
+    };
+    payBox.append(paySave);wrap.append(payBox);
     const noteLabel=node('label','','Observações internas'),note=node('textarea');note.value=o.observacoes_internas||'';
     note.addEventListener('change',async()=>{note.disabled=true;await updateOrder(o.id,{observacoes_internas:note.value});});noteLabel.append(note);wrap.append(noteLabel);
     const statusLabel=node('label','','Situação'),sel=node('select');STATUSES.forEach(s=>{const opt=node('option','',s);opt.value=s;sel.append(opt)});sel.value=o.status||STATUSES[0];
@@ -188,7 +217,11 @@ function render(){
       const data=o.data_retirada?String(o.data_retirada).slice(0,10).split('-').reverse().join('/'):'a combinar';
       const hora=o.horario_retirada||o.horario_solicitado;
       const horario=hora?' às '+String(hora).slice(0,5):'';
-      const mensagem=`Olá, ${o.cliente_nome||'tudo bem'}! 🍰 Aqui é a Juliana, da Um Doce de Amor.\n\nSua encomenda foi aprovada! ❤️\n\nPedido: ${o.id}\nBolo: ${o.peso_kg??'—'} kg, massa ${o.massa||'a combinar'}, recheios ${o.recheio_1||'—'} e ${o.recheio_2||'—'}\nValor: ${money(valor)}\nRetirada prevista: ${data}${horario}\n\nA confirmação de pagamento ou sinal, quando aplicável, será combinada por aqui. Obrigada pela preferência!`;
+      const totalPago=Number(o.pagamento_recebido||0);
+      const tipo=o.pagamento_tipo==='integral'?'Pagamento integral':'Sinal + saldo';
+      const entrada=o.pagamento_tipo==='integral'?valor:Number(o.pagamento_sinal||0);
+      const infoPagamento=`\nPagamento: ${tipo}\nValor inicial solicitado: ${money(entrada)}\nRecebido até agora: ${money(totalPago)}\nSaldo pendente: ${money(Math.max(0,valor-totalPago))}`;
+      const mensagem=`Olá, ${o.cliente_nome||'tudo bem'}! 🍰 Aqui é a Juliana, da Um Doce de Amor.\n\nSua encomenda foi aprovada! ❤️\n\nPedido: ${o.id}\nBolo: ${o.peso_kg??'—'} kg, massa ${o.massa||'a combinar'}, recheios ${o.recheio_1||'—'} e ${o.recheio_2||'—'}\nValor: ${money(valor)}\nRetirada prevista: ${data}${horario}${infoPagamento}\n\nO pagamento deve ser combinado e confirmado pela Juliana. Obrigada pela preferência!`;
       const url='https://wa.me/'+number+'?text='+encodeURIComponent(mensagem);
       const link=node('a','button','📲 Abrir WhatsApp agora');
       link.href=url;link.target='_blank';link.rel='noopener noreferrer';
