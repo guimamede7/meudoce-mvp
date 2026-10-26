@@ -98,13 +98,14 @@ async function comprimirFoto(file){
     throw Error('Não foi possível reduzir a foto para 500 KB. Tente outra imagem.');
   }finally{bitmap.close?.();}
 }
-async function enviarFotos(pedidoId){
+async function enviarFotos(pedidoId, tokenFotos){
   const id=String(pedidoId);
+  if(!/^[0-9a-f]{64}$/i.test(String(tokenFotos||'')))throw Error('Autorização das fotos inválida.');
   if(!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(id))throw Error('Protocolo do pedido inválido para anexar fotos.');
   for(let i=0;i<fotosSelecionadas.length;i++){
     $('feedback').textContent=`Pedido registrado. Enviando foto ${i+1} de ${fotosSelecionadas.length}...`;
     const blob=await comprimirFoto(fotosSelecionadas[i]);
-    const response=await fetch(`${SUPABASE_URL}/storage/v1/object/referencias-pedidos/${id}/${i+1}.jpg`,{
+    const response=await fetch(`${SUPABASE_URL}/storage/v1/object/referencias-pedidos/${id}/${tokenFotos}/${i+1}.jpg`,{
       method:'POST',headers:{apikey:SUPABASE_KEY,'Content-Type':'image/jpeg','x-upsert':'false'},body:blob
     });
     if(!response.ok){const e=await response.json().catch(()=>({}));throw Error(e.message||'Falha ao enviar foto '+(i+1));}
@@ -118,7 +119,7 @@ $('save').addEventListener('click',async()=>{
   if(sending)return;
   if(pedidoPendenteFotos){
     sending=true;$('save').disabled=true;
-    try{await enviarFotos(pedidoPendenteFotos);pedidoPendenteFotos=null;$('feedback').className='success';$('feedback').textContent='Fotos enviadas! A Juliana poderá visualizá-las no painel.';$('successOverlay').hidden=false;$('save').textContent='Pedido enviado com sucesso';}
+    try{await enviarFotos(pedidoPendenteFotos.id,pedidoPendenteFotos.token);pedidoPendenteFotos=null;$('feedback').className='success';$('feedback').textContent='Fotos enviadas! A Juliana poderá visualizá-las no painel.';$('successOverlay').hidden=false;$('save').textContent='Pedido enviado com sucesso';}
     catch(e){$('feedback').className='error';$('feedback').textContent='O pedido foi salvo, mas as fotos não foram enviadas: '+e.message;$('save').disabled=false;$('save').textContent='Tentar enviar fotos novamente';}
     finally{sending=false;}return;
   }
@@ -147,7 +148,7 @@ $('save').addEventListener('click',async()=>{
   sending=true;$('save').disabled=true;$('save').textContent='Enviando pedido...';
   $('feedback').textContent='Enviando sua solicitação com segurança...';
   try{
-    const response=await fetch(SUPABASE_URL+'/rest/v1/rpc/criar_pedido_meudoce',{
+    const response=await fetch(SUPABASE_URL+'/rest/v1/rpc/criar_pedido_meudoce_seguro',{
       method:'POST',
       headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json'},
       body:JSON.stringify({
@@ -158,9 +159,11 @@ $('save').addEventListener('click',async()=>{
       })
     });
     if(!response.ok){const err=await response.json().catch(()=>({}));throw new Error(err.message||'Erro ao enviar pedido ('+response.status+').')}
-    const pedidoId=await response.json();
+    const resultado=await response.json();
+    const pedidoId=resultado?.pedido_id, tokenFotos=resultado?.token_fotos;
+    if(!/^[0-9a-f-]{36}$/i.test(String(pedidoId||'')) || !/^[0-9a-f]{64}$/i.test(String(tokenFotos||'')))throw Error('Resposta de autorização inesperada.');
     sessionStorage.setItem('meudoce_ultimo_pedido',assinatura);
-    if(fotosSelecionadas.length){pedidoPendenteFotos=pedidoId;await enviarFotos(pedidoId);pedidoPendenteFotos=null;}
+    if(fotosSelecionadas.length){pedidoPendenteFotos={id:pedidoId,token:tokenFotos};await enviarFotos(pedidoId,tokenFotos);pedidoPendenteFotos=null;}
     $('feedback').className='success';
     $('successNumber').textContent='Protocolo: '+String(pedidoId).slice(0,8);
     $('successOverlay').hidden=false;

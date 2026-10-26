@@ -142,19 +142,30 @@ async function updateOrder(id,changes){
 }
 async function mostrarFotosPedido(pedidoId,container){
   container.replaceChildren(node('p','muted','Carregando fotos...'));
-  const {data,error}=await db.storage.from('referencias-pedidos').list(String(pedidoId),{limit:2});
+  const bucket=db.storage.from('referencias-pedidos');
+  const {data,error}=await bucket.list(String(pedidoId),{limit:100});
   if(error){container.replaceChildren(node('p','muted','Fotos indisponíveis: '+error.message));return;}
-  const arquivos=(data||[]).filter(f=>/^[12]\.jpg$/.test(f.name));
+  const caminhos=[];
+  for(const item of data||[]){
+    if(/^[12]\.jpg$/.test(item.name))caminhos.push(`${pedidoId}/${item.name}`);
+    else if(/^[0-9a-f]{64}$/i.test(item.name)){
+      const {data:internos,error:erro}=await bucket.list(`${pedidoId}/${item.name}`,{limit:10});
+      if(!erro)for(const foto of internos||[]){
+        if(/^[12]\.jpg$/.test(foto.name))caminhos.push(`${pedidoId}/${item.name}/${foto.name}`);
+      }
+    }
+  }
   container.replaceChildren();
-  if(!arquivos.length){container.append(node('p','muted','Nenhuma foto de referência anexada.'));return;}
-  for(const f of arquivos){
-    const {data:assinatura,error:erro}=await db.storage.from('referencias-pedidos').createSignedUrl(`${pedidoId}/${f.name}`,300);
+  if(!caminhos.length){container.append(node('p','muted','Nenhuma foto de referência anexada.'));return;}
+  for(const caminho of caminhos){
+    const {data:assinatura,error:erro}=await bucket.createSignedUrl(caminho,300);
     if(erro||!assinatura?.signedUrl){container.append(node('p','muted','Não foi possível carregar uma foto.'));continue;}
     const botao=node('button');botao.type='button';botao.title='Ampliar foto';
     const img=node('img');img.src=assinatura.signedUrl;img.alt='Foto de referência do pedido';img.loading='lazy';botao.append(img);
     botao.onclick=()=>window.open(assinatura.signedUrl,'_blank','noopener,noreferrer');container.append(botao);
   }
 }
+
 function render(){
   $('total').textContent=orders.length;
   $('pending').textContent=orders.filter(x=>x.status==='Aguardando avaliação').length;
