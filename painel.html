@@ -169,28 +169,38 @@ function render(){
     sel.addEventListener('change',async()=>{sel.disabled=true;await updateOrder(o.id,{status:sel.value});});statusLabel.append(sel);wrap.append(statusLabel);
     const actions=node('div','actions'),copy=node('button','secondary','Copiar resumo');copy.type='button';
     copy.onclick=()=>{const summary=`MeuDoce - Pedido ${o.id}\nCliente: ${o.cliente_nome}\nStatus: ${o.status}\nPreço final: ${money(o.preco_final??o.preco_base)}\nRetirada: ${o.data_retirada||'A definir'}`;if(navigator.clipboard?.writeText){navigator.clipboard.writeText(summary).then(()=>notice('Resumo copiado.','success')).catch(()=>prompt('Copie o resumo:',summary));}else prompt('Copie o resumo:',summary);};
-    const whatsapp=node('button','','📲 Enviar confirmação pelo WhatsApp');
+    const whatsapp=node('button','','📲 Preparar confirmação pelo WhatsApp');
     whatsapp.type='button';
+    const feedback=node('div','muted');feedback.style.marginTop='9px';
     whatsapp.onclick=()=>{
+      feedback.replaceChildren();
+      const explain=msg=>{feedback.textContent=msg;feedback.style.color='#a12536';};
       if(!APPROVED.includes(o.status)){
-        notice('Primeiro altere a situação do pedido para Aprovado e aguarde a confirmação de que foi salva.','error');return;
+        explain('Este pedido está como "'+(o.status||'sem status')+'". Selecione Aprovado e aguarde salvar antes de confirmar.');return;
       }
       const raw=String(o.cliente_whatsapp||'').replace(/\D/g,'');
-      const number=raw.length===10||raw.length===11?'55'+raw:raw;
+      const number=(raw.length===10||raw.length===11?'55'+raw:raw);
       if(!/^55\d{10,11}$/.test(number)){
-        notice('WhatsApp inválido. Confira o número do cliente.','error');return;
+        explain('WhatsApp do pedido inválido ou ausente: '+(o.cliente_whatsapp||'não informado')+'. Confira o cadastro do cliente.');return;
       }
       const valor=Number(o.preco_final??o.preco_base);
-      if(!Number.isFinite(valor)||valor<=0){
-        notice('Defina um preço válido antes de enviar a confirmação.','error');return;
-      }
+      if(!Number.isFinite(valor)||valor<=0){explain('O preço final está zerado ou inválido. Preencha e aguarde salvar.');return;}
       const data=o.data_retirada?String(o.data_retirada).slice(0,10).split('-').reverse().join('/'):'a combinar';
       const hora=o.horario_retirada||o.horario_solicitado;
       const horario=hora?' às '+String(hora).slice(0,5):'';
       const mensagem=`Olá, ${o.cliente_nome||'tudo bem'}! 🍰 Aqui é a Juliana, da Um Doce de Amor.\n\nSua encomenda foi aprovada! ❤️\n\nPedido: ${o.id}\nBolo: ${o.peso_kg??'—'} kg, massa ${o.massa||'a combinar'}, recheios ${o.recheio_1||'—'} e ${o.recheio_2||'—'}\nValor: ${money(valor)}\nRetirada prevista: ${data}${horario}\n\nA confirmação de pagamento ou sinal, quando aplicável, será combinada por aqui. Obrigada pela preferência!`;
-      window.location.href='https://api.whatsapp.com/send?phone='+number+'&text='+encodeURIComponent(mensagem);
+      const url='https://wa.me/'+number+'?text='+encodeURIComponent(mensagem);
+      const link=node('a','button','📲 Abrir WhatsApp agora');
+      link.href=url;link.target='_blank';link.rel='noopener noreferrer';
+      const copyBtn=node('button','secondary','Copiar mensagem');copyBtn.type='button';
+      copyBtn.onclick=async()=>{
+        try{await navigator.clipboard.writeText(mensagem);feedback.append(node('p','','Mensagem copiada. Cole no WhatsApp.'));}
+        catch(_){window.prompt('Copie a mensagem:',mensagem);}
+      };
+      feedback.style.color='';
+      feedback.append(node('p','','Mensagem preparada. Toque no link abaixo para abrir o WhatsApp:'),link,document.createTextNode(' '),copyBtn);
     };
-    actions.append(copy,whatsapp);wrap.append(actions);root.append(wrap);
+    actions.append(copy,whatsapp);wrap.append(actions,feedback);root.append(wrap);
   });
 }
 
