@@ -5,6 +5,18 @@
 <title>MeuDoce | Painel profissional</title>
 <style>
 :root{font-family:system-ui,-apple-system,sans-serif;color:#49313d;background:#fff7f7}*{box-sizing:border-box}body{margin:0}header{background:#963e61;color:white;padding:24px 18px}header>div,main{max-width:960px;margin:auto}header h1{margin:0;font-size:26px}header p{margin:6px 0 0}main{padding:18px}.notice{background:#fff0e6;border-left:4px solid #c77c41;padding:13px;border-radius:8px;margin-bottom:16px;font-size:14px}.error{background:#ffe7e7;border-left-color:#b93030}.success{background:#edf8ef;border-left-color:#388b51}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.card{background:white;border:1px solid #efd9df;border-radius:15px;padding:16px;margin-bottom:13px;box-shadow:0 2px 9px #5223350a}.metric{font-size:26px;font-weight:800;color:#963e61}.muted{color:#795d68;font-size:13px}h2{font-size:19px;margin:0 0 13px}h3{margin:0 0 8px}label{display:block;font-weight:600;margin:12px 0 5px}input,select,textarea{width:100%;font:inherit;border:1px solid #dcc5cf;border-radius:9px;padding:11px;background:white;color:#49313d}textarea{min-height:70px}button,.button{background:#963e61;color:white;border:0;border-radius:9px;padding:11px 14px;font:inherit;font-weight:700;cursor:pointer;display:inline-block;text-decoration:none}button:disabled{opacity:.55;cursor:wait}button.secondary{background:#f4e5eb;color:#7b3753}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.actions button{flex:1}.row{display:flex;gap:12px;justify-content:space-between;align-items:center}.tag{font-size:12px;border-radius:20px;background:#f6e4eb;padding:5px 9px;font-weight:700}.empty{text-align:center;color:#795d68;padding:25px}.order{border-top:1px solid #f0dfe5;padding:17px 0}.order:first-child{border-top:0}.order p{margin:5px 0}.filters{display:flex;gap:8px;flex-wrap:wrap}.filters>*{flex:1;min-width:140px}.hidden{display:none!important}.login{max-width:440px;margin:25px auto}.small{font-size:13px}@media(min-width:700px){.grid{grid-template-columns:repeat(4,1fr)}}
+
+.tabbar{display:flex;gap:8px;margin-bottom:14px}.tabbar button{flex:1}
+.tabbar button.active{background:#963e61;color:white}
+.tabbar button:not(.active){background:#f4e5eb;color:#7b3753}
+.product-photo{width:105px;height:105px;object-fit:cover;border-radius:12px;background:#f4e5eb}
+.product-item{display:flex;gap:12px;align-items:flex-start;border-top:1px solid #f0dfe5;padding:14px 0}
+.product-item:first-child{border-top:0}
+.product-info{flex:1;min-width:0}
+.product-info p{margin:5px 0}
+.product-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.product-actions button{font-size:13px;padding:8px 10px}
+.preview{max-width:180px;max-height:180px;object-fit:cover;border-radius:12px;margin-top:8px}
 </style>
 </head>
 <body>
@@ -17,9 +29,33 @@
 </section>
 <div id="adminArea" class="hidden">
 <div class="row" style="margin-bottom:14px;flex-wrap:wrap"><span id="userEmail" class="muted"></span><button id="logout" class="secondary">Sair</button></div>
+<nav class="tabbar" aria-label="Áreas do painel"><button type="button" id="tabOrders" class="active">📋 Encomendas</button><button type="button" id="tabCakes">🍰 Pronta Entrega</button></nav>
+<div id="ordersArea">
 <section class="grid"><div class="card"><div class="muted">Pedidos</div><div id="total" class="metric">0</div></div><div class="card"><div class="muted">Aguardando</div><div id="pending" class="metric">0</div></div><div class="card"><div class="muted">Aprovados</div><div id="approved" class="metric">0</div></div><div class="card"><div class="muted">Valor aprovado</div><div id="revenue" class="metric">R$ 0</div></div></section>
 <section class="card"><h2>Pedidos e orçamentos</h2><div class="filters"><input id="search" placeholder="Buscar cliente ou pedido" aria-label="Buscar pedidos"><select id="filter" aria-label="Filtrar status"><option value="">Todos os status</option><option>Aguardando avaliação</option><option>Aprovado</option><option>Em produção</option><option>Pronto para retirada</option><option>Concluído</option><option>Recusado</option></select></div><div class="actions"><button id="refresh" class="secondary">Atualizar pedidos</button><button id="export" class="secondary">Exportar backup</button></div><div id="orders" class="empty">Carregando pedidos...</div></section>
-<section class="card"><h2>MeuDoce</h2><p class="muted">Os pedidos são carregados do Supabase. O formulário dos clientes precisará ser conectado separadamente para receber novos pedidos automaticamente.</p><a class="button" href="./">Voltar ao MeuDoce</a></section>
+</div>
+<div id="cakesArea" class="hidden">
+<section class="card">
+<h2>🍰 Gerenciar Pronta Entrega</h2>
+<p class="muted">Cadastre os bolos disponíveis. Somente produtos publicados e com estoque aparecem para clientes quando a vitrine estiver pronta.</p>
+<form id="cakeForm">
+<input type="hidden" id="cakeId">
+<label for="cakeName">Nome do bolo</label><input id="cakeName" maxlength="100" required placeholder="Ex.: Bolo de chocolate">
+<label for="cakeDescription">Descrição</label><textarea id="cakeDescription" maxlength="500" placeholder="Recheio, peso, tamanho..."></textarea>
+<div class="grid" style="grid-template-columns:repeat(2,1fr)">
+<div><label for="cakePrice">Preço (R$)</label><input id="cakePrice" type="number" min="0.01" step="0.01" required></div>
+<div><label for="cakeQty">Quantidade</label><input id="cakeQty" type="number" min="0" step="1" value="1" required></div>
+</div>
+<label for="cakePhoto">Foto do bolo (opcional)</label><input id="cakePhoto" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif">
+<img id="cakePreview" class="preview hidden" alt="Prévia da foto">
+<p class="muted">Fotos serão armazenadas no Supabase. Antes de enviar fotos, precisaremos configurar o armazenamento na próxima etapa.</p>
+<label style="display:flex;gap:10px;align-items:center"><input id="cakePublished" type="checkbox" style="width:auto"> Publicar na vitrine</label>
+<div class="actions"><button type="submit" id="saveCake">Salvar bolo</button><button type="button" id="cancelCake" class="secondary">Limpar formulário</button></div>
+</form>
+</section>
+<section class="card"><div class="row"><h2>Bolos cadastrados</h2><button type="button" id="refreshCakes" class="secondary">Atualizar</button></div><div id="cakeList" class="empty">Carregando bolos...</div></section>
+</div>
+<section class="card"><h2>MeuDoce</h2><p class="muted">Os pedidos são carregados do Supabase. As encomendas já são recebidas automaticamente. A vitrine de pronta entrega será conectada à página inicial em uma próxima etapa.</p><a class="button" href="./">Voltar ao MeuDoce</a></section>
 </div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -31,11 +67,11 @@ const $=id=>document.getElementById(id);
 const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const STATUSES=['Aguardando avaliação','Aprovado','Em produção','Pronto para retirada','Concluído','Recusado'];
 const APPROVED=['Aprovado','Em produção','Pronto para retirada','Concluído'];
-let db,orders=[],authorized=false;
+let db,orders=[],cakes=[],authorized=false;
 function notice(msg,type=''){const el=$('message');el.textContent=msg;el.className='notice'+(type?' '+type:'');}
 function clearNotice(){$('message').classList.add('hidden');}
 function node(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=String(text);return e;}
-function showLogin(){$('adminArea').classList.add('hidden');$('loginArea').classList.remove('hidden');$('password').value='';authorized=false;orders=[];}
+function showLogin(){$('adminArea').classList.add('hidden');$('loginArea').classList.remove('hidden');$('password').value='';authorized=false;orders=[];cakes=[];}
 function showAdmin(email){$('loginArea').classList.add('hidden');$('adminArea').classList.remove('hidden');$('userEmail').textContent=email||'Administradora';}
 async function verifyAdmin(user){
   const {data,error}=await db.from('administradores').select('usuario_id').eq('usuario_id',user.id).maybeSingle();
@@ -47,7 +83,7 @@ async function checkSession(){
   if(error||!data.user){showLogin();return;}
   try{
     if(!await verifyAdmin(data.user)){await db.auth.signOut();showLogin();notice('Esta conta não possui autorização para acessar o painel.','error');return;}
-    authorized=true;showAdmin(data.user.email);clearNotice();await loadOrders();
+    authorized=true;showAdmin(data.user.email);clearNotice();await loadOrders();await loadCakes();
   }catch(e){showLogin();notice('Não foi possível validar o acesso: '+e.message,'error');}
 }
 async function loadOrders(){
@@ -89,6 +125,105 @@ function render(){
     actions.append(copy);wrap.append(actions);root.append(wrap);
   });
 }
+
+function switchTab(tab){
+  $('ordersArea').classList.toggle('hidden',tab!=='orders');
+  $('cakesArea').classList.toggle('hidden',tab!=='cakes');
+  $('tabOrders').classList.toggle('active',tab==='orders');
+  $('tabCakes').classList.toggle('active',tab==='cakes');
+}
+$('tabOrders').onclick=()=>switchTab('orders');
+$('tabCakes').onclick=()=>switchTab('cakes');
+function resetCakeForm(){
+  $('cakeForm').reset();$('cakeId').value='';$('cakeQty').value=1;
+  $('cakePreview').src='';$('cakePreview').classList.add('hidden');
+  $('saveCake').textContent='Salvar bolo';
+}
+$('cancelCake').onclick=resetCakeForm;
+$('cakePhoto').onchange=()=>{
+  const file=$('cakePhoto').files[0];
+  if(!file){$('cakePreview').classList.add('hidden');return;}
+  if(file.size>5*1024*1024){notice('A foto deve ter no máximo 5 MB.','error');$('cakePhoto').value='';return;}
+  $('cakePreview').src=URL.createObjectURL(file);
+  $('cakePreview').classList.remove('hidden');
+};
+async function loadCakes(){
+  if(!authorized)return;
+  const {data,error}=await db.from('bolos_pronta_entrega').select('*').order('criado_em',{ascending:false});
+  if(error){notice('Erro ao carregar bolos: '+error.message,'error');return;}
+  cakes=data||[];renderCakes();
+}
+function renderCakes(){
+  const root=$('cakeList');root.replaceChildren();root.className='';
+  if(!cakes.length){root.append(node('div','empty','Nenhum bolo cadastrado ainda.'));return;}
+  cakes.forEach(c=>{
+    const item=node('article','product-item');
+    if(c.foto_url){const img=node('img','product-photo');img.src=c.foto_url;img.alt=c.nome;img.loading='lazy';item.append(img);}
+    const info=node('div','product-info');
+    info.append(node('h3','',c.nome),node('p','muted',c.descricao||'Sem descrição'),
+      node('p','',`${money(c.preco)} · ${c.quantidade} unidade(s)`),
+      node('p','tag',c.publicado?(c.quantidade>0?'Publicado':'Esgotado'):'Oculto'));
+    const actions=node('div','product-actions');
+    const edit=node('button','secondary','Editar');
+    edit.type='button';edit.onclick=()=>{
+      $('cakeId').value=c.id;$('cakeName').value=c.nome;$('cakeDescription').value=c.descricao||'';
+      $('cakePrice').value=c.preco;$('cakeQty').value=c.quantidade;$('cakePublished').checked=c.publicado;
+      $('cakePhoto').value='';
+      if(c.foto_url){$('cakePreview').src=c.foto_url;$('cakePreview').classList.remove('hidden');}
+      else $('cakePreview').classList.add('hidden');
+      $('saveCake').textContent='Salvar alterações';
+      $('cakeForm').scrollIntoView({behavior:'smooth',block:'start'});
+    };
+    const toggle=node('button','secondary',c.publicado?'Ocultar':'Publicar');
+    toggle.type='button';toggle.onclick=async()=>{
+      toggle.disabled=true;
+      const {error}=await db.from('bolos_pronta_entrega').update({publicado:!c.publicado,atualizado_em:new Date().toISOString()}).eq('id',c.id);
+      if(error)notice('Erro: '+error.message,'error');
+      else{notice('Disponibilidade atualizada.','success');await loadCakes();}
+      toggle.disabled=false;
+    };
+    const sold=node('button','secondary','Esgotado');
+    sold.type='button';sold.disabled=c.quantidade===0;
+    sold.onclick=async()=>{
+      sold.disabled=true;
+      const {error}=await db.from('bolos_pronta_entrega').update({quantidade:0,atualizado_em:new Date().toISOString()}).eq('id',c.id);
+      if(error)notice('Erro: '+error.message,'error');
+      else{notice('Bolo marcado como esgotado.','success');await loadCakes();}
+      sold.disabled=false;
+    };
+    actions.append(edit,toggle,sold);info.append(actions);item.append(info);root.append(item);
+  });
+}
+$('refreshCakes').onclick=loadCakes;
+$('cakeForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(!authorized)return;
+  const btn=$('saveCake');btn.disabled=true;
+  try{
+    const name=$('cakeName').value.trim(),price=Number($('cakePrice').value),qty=Number($('cakeQty').value);
+    if(!name||!Number.isFinite(price)||price<=0||!Number.isInteger(qty)||qty<0)throw Error('Confira nome, preço e quantidade.');
+    let photoUrl=cakes.find(x=>x.id===$('cakeId').value)?.foto_url||null;
+    const file=$('cakePhoto').files[0];
+    if(file){
+      if(file.size>5*1024*1024)throw Error('Foto acima de 5 MB.');
+      if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('Use foto JPG, PNG ou WebP.');
+      const ext=file.type==='image/png'?'png':file.type==='image/webp'?'webp':'jpg';
+      const path=`bolos/${crypto.randomUUID()}.${ext}`;
+      const {error:uploadError}=await db.storage.from('fotos-bolos').upload(path,file,{contentType:file.type,upsert:false});
+      if(uploadError)throw Error('Não foi possível enviar a foto. Configure o bucket fotos-bolos: '+uploadError.message);
+      photoUrl=db.storage.from('fotos-bolos').getPublicUrl(path).data.publicUrl;
+    }
+    const payload={nome:name,descricao:$('cakeDescription').value.trim(),preco:price,quantidade:qty,
+      foto_url:photoUrl,publicado:$('cakePublished').checked,atualizado_em:new Date().toISOString()};
+    const id=$('cakeId').value;
+    const result=id?await db.from('bolos_pronta_entrega').update(payload).eq('id',id).select('id'):
+      await db.from('bolos_pronta_entrega').insert(payload).select('id');
+    if(result.error||!result.data?.length)throw Error(result.error?.message||'Não foi possível confirmar o salvamento.');
+    resetCakeForm();await loadCakes();notice('Bolo salvo com sucesso!','success');
+  }catch(err){notice('Erro ao salvar bolo: '+err.message,'error');}
+  finally{btn.disabled=false;}
+});
+
 $('loginForm').addEventListener('submit',async e=>{
   e.preventDefault();clearNotice();$('loginBtn').disabled=true;
   try{const {error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)throw error;await checkSession();}
