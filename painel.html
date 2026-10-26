@@ -30,6 +30,7 @@
 @media(max-width:480px){.agenda-day{min-height:58px;padding:5px 3px}.agenda-day small{font-size:10px}.tabbar button{min-width:calc(50% - 5px)}}
 
 .agenda-blocked{background:#fff0e6!important;border-color:#d58a52!important}.agenda-blocked small{color:#9b5127}.block-list{display:grid;gap:9px;margin-top:12px}.block-item{border:1px solid #edd2c4;background:#fff8f3;border-radius:10px;padding:12px}.block-item p{margin:5px 0}.block-form{background:#fff9fb;border:1px solid #f0dce5;border-radius:12px;padding:14px;margin-top:14px}.block-form .grid{grid-template-columns:repeat(2,minmax(0,1fr))}.block-hint{font-size:13px;color:#795d68}.payment-box{border:1px solid #e5c8d4;background:#fff7fa;padding:13px;border-radius:12px;margin:14px 0}.agenda-capacity{font-weight:700;color:#963e61}
+.finance-table{width:100%;border-collapse:collapse;font-size:14px}.finance-table th,.finance-table td{padding:10px 7px;border-bottom:1px solid #efd9df;text-align:left}.finance-table td.num,.finance-table th.num{text-align:right}.finance-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.finance-kpis .card{margin:0}.finance-kpis .metric{font-size:21px}.finance-scroll{overflow-x:auto}.finance-bars{display:grid;gap:9px}.finance-bar{height:12px;background:#f5e5ec;border-radius:8px;overflow:hidden}.finance-bar>div{height:100%;background:#963e61}.finance-controls{display:flex;gap:9px;flex-wrap:wrap;align-items:end}.finance-controls label{flex:1;min-width:145px}.finance-note{font-size:12px;color:#795d68} @media(min-width:700px){.finance-kpis{grid-template-columns:repeat(4,1fr)}}
 </style>
 </head>
 <body>
@@ -42,10 +43,17 @@
 </section>
 <div id="adminArea" class="hidden">
 <div class="row" style="margin-bottom:14px;flex-wrap:wrap"><span id="userEmail" class="muted"></span><button id="logout" class="secondary">Sair</button></div>
-<nav class="tabbar" aria-label="Áreas do painel"><button type="button" id="tabOrders" class="active">📋 Encomendas</button><button type="button" id="tabAgenda">📅 Agenda</button><button type="button" id="tabCakes">🍰 Pronta Entrega</button><button type="button" id="tabReservations">📩 Reservas <span id="reservationCount"></span></button></nav>
+<nav class="tabbar" aria-label="Áreas do painel"><button type="button" id="tabOrders" class="active">📋 Encomendas</button><button type="button" id="tabFinance">💰 Financeiro</button><button type="button" id="tabAgenda">📅 Agenda</button><button type="button" id="tabCakes">🍰 Pronta Entrega</button><button type="button" id="tabReservations">📩 Reservas <span id="reservationCount"></span></button></nav>
 <div id="ordersArea">
 <section class="grid"><div class="card"><div class="muted">Pedidos</div><div id="total" class="metric">0</div></div><div class="card"><div class="muted">Aguardando</div><div id="pending" class="metric">0</div></div><div class="card"><div class="muted">Aprovados</div><div id="approved" class="metric">0</div></div><div class="card"><div class="muted">Valor aprovado</div><div id="revenue" class="metric">R$ 0</div></div></section>
 <section class="card"><h2>Pedidos e orçamentos</h2><div class="filters"><input id="search" placeholder="Buscar cliente ou pedido" aria-label="Buscar pedidos"><select id="filter" aria-label="Filtrar status"><option value="">Todos os status</option><option>Aguardando avaliação</option><option>Aprovado</option><option>Em produção</option><option>Pronto para retirada</option><option>Concluído</option><option>Recusado</option></select></div><div class="actions"><button id="refresh" class="secondary">Atualizar pedidos</button><button id="export" class="secondary">Exportar backup</button></div><div id="orders" class="empty">Carregando pedidos...</div></section>
+</div>
+<div id="financeArea" class="hidden">
+<section class="card"><h2>💰 Painel financeiro</h2><div class="finance-controls"><label>Período de retirada<select id="financePeriod"><option value="month">Mês</option><option value="all">Todos os pedidos carregados</option></select></label><label id="financeMonthWrap">Mês<input id="financeMonth" type="month"></label></div><p class="finance-note">Considera encomendas aprovadas ou em produção, prontas ou concluídas. Exclui pedidos aguardando avaliação e recusados. Valores recebidos são os registrados manualmente, não um extrato bancário.</p></section>
+<div class="finance-kpis"><div class="card"><div class="muted">Valor das encomendas</div><div id="finTotal" class="metric">—</div></div><div class="card"><div class="muted">Recebido registrado</div><div id="finReceived" class="metric">—</div></div><div class="card"><div class="muted">Saldo a receber</div><div id="finDue" class="metric">—</div></div><div class="card"><div class="muted">Encomendas</div><div id="finCount" class="metric">—</div></div></div>
+<section class="card"><h2>Situação dos pagamentos</h2><div id="financeBreakdown"></div></section>
+<section class="card"><h2>Encomendas e saldos</h2><div class="finance-scroll"><table class="finance-table"><thead><tr><th>Cliente / retirada</th><th class="num">Total</th><th class="num">Recebido</th><th class="num">Saldo</th></tr></thead><tbody id="financeRows"></tbody></table></div></section>
+<section class="card"><h2>Resumo por mês de retirada</h2><div id="financeMonths"></div><p class="finance-note">Agrupamento pela data prevista de retirada. Como ainda não registramos a data de cada pagamento, estes valores não representam entradas de caixa por mês.</p></section>
 </div>
 <div id="agendaArea" class="hidden">
 <section class="card"><div class="agenda-head"><button id="agendaPrev" type="button" class="secondary" aria-label="Mês anterior">‹</button><h2 id="agendaMonth">Agenda</h2><button id="agendaNext" type="button" class="secondary" aria-label="Próximo mês">›</button></div>
@@ -123,14 +131,14 @@ async function loadOrders(){
   const {data,error}=await db.from('pedidos').select('*').order('criado_em',{ascending:false}).limit(500);
   $('refresh').disabled=false;
   if(error){notice('Erro ao carregar pedidos: '+error.message,'error');return;}
-  orders=data||[];clearNotice();render();renderAgenda();
+  orders=data||[];clearNotice();render();renderAgenda();renderFinance();
 }
 async function updateOrder(id,changes){
   if(!authorized)return false;
   const {data,error}=await db.from('pedidos').update(changes).eq('id',id).select('id');
   if(error||!data?.length){notice('Não foi possível salvar a alteração. '+(error?.message||'Permissão não confirmada.'),'error');await loadOrders();return false;}
   const o=orders.find(x=>x.id===id);if(o)Object.assign(o,changes);
-  notice('Alteração salva no Supabase.','success');render();renderAgenda();return true;
+  notice('Alteração salva no Supabase.','success');render();renderAgenda();renderFinance();return true;
 }
 async function mostrarFotosPedido(pedidoId,container){
   container.replaceChildren(node('p','muted','Carregando fotos...'));
@@ -339,19 +347,67 @@ $('blockForm').addEventListener('submit',async e=>{
   finally{btn.disabled=false;}
 });
 
+// Financeiro: posição atual dos pedidos, agrupada pela data de retirada.
+const finMonthInput=$('financeMonth');
+finMonthInput.value=new Date().toLocaleDateString('en-CA').slice(0,7);
+$('financePeriod').onchange=renderFinance;
+finMonthInput.onchange=renderFinance;
+function finValues(o){
+  const total=Math.max(0,Number(o.preco_final??o.preco_base??0)||0);
+  const received=Math.max(0,Math.min(total,Number(o.pagamento_recebido||0)||0));
+  return {total,received,due:Math.max(0,total-received)};
+}
+function renderFinance(){
+  const period=$('financePeriod').value,month=finMonthInput.value;
+  $('financeMonthWrap').classList.toggle('hidden',period!=='month');
+  const approved=orders.filter(o=>APPROVED.includes(o.status));
+  const selected=approved.filter(o=>period==='all'||String(o.data_retirada||'').slice(0,7)===month);
+  const sum=(arr,key)=>arr.reduce((n,o)=>n+finValues(o)[key],0);
+  $('finTotal').textContent=money(sum(selected,'total'));
+  $('finReceived').textContent=money(sum(selected,'received'));
+  $('finDue').textContent=money(sum(selected,'due'));
+  $('finCount').textContent=String(selected.length);
+  const paid=selected.filter(o=>finValues(o).due<0.005);
+  const partial=selected.filter(o=>finValues(o).received>0.005&&finValues(o).due>=0.005);
+  const unpaid=selected.filter(o=>finValues(o).received<=0.005);
+  const breakdown=$('financeBreakdown');breakdown.replaceChildren();
+  [['Quitadas',paid],['Parcialmente pagas',partial],['Sem recebimento',unpaid]].forEach(([label,arr])=>{
+    const line=node('p','',`${label}: ${arr.length} · ${money(sum(arr,'due'))} de saldo`);breakdown.append(line);
+    const bar=node('div','finance-bar'),fill=node('div');fill.style.width=(selected.length?arr.length/selected.length*100:0)+'%';bar.append(fill);breakdown.append(bar);
+  });
+  const rows=$('financeRows');rows.replaceChildren();
+  if(!selected.length){const tr=node('tr'),td=node('td','','Nenhuma encomenda aprovada neste período.');td.colSpan=4;tr.append(td);rows.append(tr);}
+  selected.slice().sort((a,b)=>String(a.data_retirada||'').localeCompare(String(b.data_retirada||''))).forEach(o=>{
+    const v=finValues(o),tr=node('tr');
+    const customer=node('td','',`${o.cliente_nome||'Cliente'} · ${o.data_retirada||'Sem data'}`);tr.append(customer);
+    for(const val of [v.total,v.received,v.due])tr.append(node('td','num',money(val)));
+    rows.append(tr);
+  });
+  const grouped=new Map();
+  approved.forEach(o=>{const key=String(o.data_retirada||'').slice(0,7)||'Sem data';if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(o);});
+  const months=$('financeMonths');months.replaceChildren();
+  if(!grouped.size)months.append(node('p','muted','Ainda não há encomendas aprovadas.'));
+  [...grouped.entries()].sort((a,b)=>b[0].localeCompare(a[0])).forEach(([key,arr])=>{
+    months.append(node('p','',`${key} · ${arr.length} pedido(s) · Total ${money(sum(arr,'total'))} · Recebido ${money(sum(arr,'received'))} · Saldo ${money(sum(arr,'due'))}`));
+  });
+}
 function switchTab(tab){
   $('ordersArea').classList.toggle('hidden',tab!=='orders');
+  $('financeArea').classList.toggle('hidden',tab!=='finance');
+  if(tab==='finance')renderFinance();
   $('agendaArea').classList.toggle('hidden',tab!=='agenda');
   if(tab==='agenda')renderAgenda();
   $('cakesArea').classList.toggle('hidden',tab!=='cakes');
   $('reservationsArea').classList.toggle('hidden',tab!=='reservations');
   $('tabOrders').classList.toggle('active',tab==='orders');
+  $('tabFinance').classList.toggle('active',tab==='finance');
   $('tabAgenda').classList.toggle('active',tab==='agenda');
   $('tabCakes').classList.toggle('active',tab==='cakes');
   $('tabReservations').classList.toggle('active',tab==='reservations');
   if(tab==='reservations')loadReservations();
 }
 $('tabOrders').onclick=()=>switchTab('orders');
+$('tabFinance').onclick=()=>switchTab('finance');
 $('tabAgenda').onclick=()=>switchTab('agenda');
 $('tabCakes').onclick=()=>switchTab('cakes');
 $('tabReservations').onclick=()=>switchTab('reservations');
