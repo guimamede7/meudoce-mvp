@@ -274,12 +274,21 @@ function renderReservations(){
       confirm.onclick=()=>decide(true);reject.onclick=()=>decide(false);
       actions.append(confirm,reject);item.append(actions);
     }
-    const whatsapp=node('button','secondary','Conversar pelo WhatsApp');whatsapp.type='button';
+    const whatsapp=node('button','secondary',r.status==='Confirmada'?'📲 Enviar confirmação pelo WhatsApp':r.status==='Recusada'?'📲 Avisar recusa pelo WhatsApp':'Conversar pelo WhatsApp');
+    whatsapp.type='button';
     whatsapp.onclick=()=>{
       const digits=(r.cliente_whatsapp||'').replace(/\D/g,'');
       const number=digits.length===11||digits.length===10?'55'+digits:digits;
-      const message=`Olá, ${r.cliente_nome}! Aqui é a Juliana, da Um Doce de Amor. Sobre sua solicitação do bolo ${cake?.nome||''}: ${r.status}. Vamos combinar a retirada?`;
       if(number.length<12||number.length>13){notice('Número de WhatsApp inválido para abrir a conversa.','error');return;}
+      const bolo=cake?.nome||'bolo solicitado';
+      let message;
+      if(r.status==='Confirmada'){
+        message=`Olá, ${r.cliente_nome}! 🍰 Aqui é a Juliana, da Um Doce de Amor. Sua reserva do ${bolo} foi CONFIRMADA!\n\nValor: ${cake?money(cake.preco):'a confirmar'}\nProtocolo: ${r.id.slice(0,8)}\n\nVamos combinar o horário de retirada? Obrigada pela preferência! ❤️`;
+      }else if(r.status==='Recusada'){
+        message=`Olá, ${r.cliente_nome}! Aqui é a Juliana, da Um Doce de Amor. Infelizmente não foi possível confirmar sua solicitação do ${bolo} (protocolo ${r.id.slice(0,8)}). Agradeço pelo interesse! ❤️`;
+      }else{
+        message=`Olá, ${r.cliente_nome}! Aqui é a Juliana, da Um Doce de Amor. Recebi sua solicitação do ${bolo} (protocolo ${r.id.slice(0,8)}). Em breve confirmarei a disponibilidade.`;
+      }
       window.open('https://wa.me/'+number+'?text='+encodeURIComponent(message),'_blank','noopener,noreferrer');
     };
     const actions=node('div','actions');actions.append(whatsapp);item.append(actions);
