@@ -52,7 +52,7 @@
 <div id="readyAll" class="ready-grid"><p class="ready-msg">Carregando...</p></div>
 <button type="button" class="btn alt" id="reloadReady">Atualizar disponibilidade</button>
 </div></section>
-<section id="formView"><div class="card"><h2>1. Monte seu bolo</h2><label>Nome da cliente *</label><input id="client" autocomplete="name" placeholder="Nome completo"><label for="phone">WhatsApp da cliente *</label><input id="phone" type="tel" inputmode="tel" required maxlength="20" autocomplete="tel" placeholder="(27) 99999-9999"><h3>Massa</h3><div id="masses" class="choices"></div><h3>Peso</h3><div id="weights" class="choices"></div><h3>Formato</h3><div id="shapes" class="choices"></div><h3>Recheio — 1ª camada</h3><div id="filling1" class="choices"></div><h3>Recheio — 2ª camada</h3><div id="filling2" class="choices"></div><p class="muted">Cobertura: chantininho · Sempre 2 camadas de recheio · Sem acréscimo por sabor.</p></div><div class="card"><h2>2. Personalização e retirada</h2><label>Data desejada para retirada *</label><input id="pickup" type="date"><label for="pickupTime">Horário desejado para retirada *</label><select id="pickupTime" required><option value="">Selecione o horário</option><option value="08:00">08:00</option><option value="08:30">08:30</option><option value="09:00">09:00</option><option value="09:30">09:30</option><option value="10:00">10:00</option><option value="10:30">10:30</option><option value="11:00">11:00</option><option value="11:30">11:30</option><option value="12:00">12:00</option><option value="12:30">12:30</option><option value="13:00">13:00</option><option value="13:30">13:30</option><option value="14:00">14:00</option><option value="14:30">14:30</option><option value="15:00">15:00</option><option value="15:30">15:30</option><option value="16:00">16:00</option><option value="16:30">16:30</option><option value="17:00">17:00</option><option value="17:30">17:30</option><option value="18:00">18:00</option><option value="18:30">18:30</option><option value="19:00">19:00</option></select><p class="muted">Retiradas normalmente das 8h às 19h, a cada 30 minutos. O horário será confirmado pela Juliana. Horários excepcionais, domingos e feriados: consulte a disponibilidade.</p><p id="pickupNotice" class="note hidden" role="status" aria-live="polite"></p><p id="blockNotice" class="note hidden" role="status" aria-live="polite"></p><label>Tema, cores, topper, flores e observações</label><textarea id="notes" placeholder="Ex.: Tema jardim, rosa e branco, topper com nome Ana, flores..."></textarea><label>Fotos de referência (opcional)</label><input id="photos" type="file" accept="image/*" multiple><div id="previews" class="preview"></div><p class="muted">Nesta primeira versão, as fotos são apenas pré-visualizadas no dispositivo; não são enviadas nem armazenadas com o pedido. Envie-as separadamente pelo WhatsApp.</p><p class="pill">Somente retirada no local — não fazemos entregas.</p></div><div class="card"><h2>3. Valor estimado</h2><div class="muted" id="summary"></div><div id="total" class="price">R$ 80,00</div><p class="note">Este é o preço base. Topper, flores e decoração especial dependem de avaliação. O pedido só será confirmado após aprovação da confeiteira.</p><button class="btn" id="save" type="button">Enviar pedido à confeiteira</button><button class="btn alt" id="share" type="button">Enviar resumo pelo WhatsApp</button><p id="feedback" class="muted" role="status"></p></div></section></main><footer>MeuDoce • Solicitações online • Valores e disponibilidade sujeitos à aprovação</footer><div class="success-overlay" id="successOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="successTitle"><div class="success-dialog"><div class="check" aria-hidden="true">✅</div><h2 id="successTitle">Pedido salvo com sucesso!</h2><p>Recebemos sua solicitação. A Juliana vai avaliar os detalhes e confirmar a disponibilidade.</p><p id="successNumber" class="muted"></p><button class="btn" id="successClose" type="button">Entendi</button></div></div><div class="reservation-overlay" id="reservationOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="reservationTitle"><div class="reservation-dialog"><h2 id="reservationTitle">🍰 Solicitar reserva</h2><p id="reservationCake" class="muted"></p><form id="reservationForm"><label for="reservationName">Seu nome *</label><input id="reservationName" required minlength="2" maxlength="120" autocomplete="name" placeholder="Nome completo"><label for="reservationPhone">Seu WhatsApp *</label><input id="reservationPhone" required type="tel" inputmode="tel" maxlength="20" autocomplete="tel" placeholder="(27) 99999-9999"><p class="muted">A solicitação não garante o bolo. Juliana confirmará a disponibilidade. Somente retirada no local.</p><p id="reservationMessage" class="reservation-message" role="status" aria-live="polite"></p><div class="flex"><button class="btn alt" id="reservationCancel" type="button">Fechar</button><button class="btn" id="reservationSend" type="submit">Enviar solicitação</button></div></form></div></div><script>
+<section id="formView"><div class="card"><h2>1. Monte seu bolo</h2><label>Nome da cliente *</label><input id="client" autocomplete="name" placeholder="Nome completo"><label for="phone">WhatsApp da cliente *</label><input id="phone" type="tel" inputmode="tel" required maxlength="20" autocomplete="tel" placeholder="(27) 99999-9999"><h3>Massa</h3><div id="masses" class="choices"></div><h3>Peso</h3><div id="weights" class="choices"></div><h3>Formato</h3><div id="shapes" class="choices"></div><h3>Recheio — 1ª camada</h3><div id="filling1" class="choices"></div><h3>Recheio — 2ª camada</h3><div id="filling2" class="choices"></div><p class="muted">Cobertura: chantininho · Sempre 2 camadas de recheio · Sem acréscimo por sabor.</p></div><div class="card"><h2>2. Personalização e retirada</h2><label>Data desejada para retirada *</label><input id="pickup" type="date"><label for="pickupTime">Horário desejado para retirada *</label><select id="pickupTime" required><option value="">Selecione o horário</option><option value="08:00">08:00</option><option value="08:30">08:30</option><option value="09:00">09:00</option><option value="09:30">09:30</option><option value="10:00">10:00</option><option value="10:30">10:30</option><option value="11:00">11:00</option><option value="11:30">11:30</option><option value="12:00">12:00</option><option value="12:30">12:30</option><option value="13:00">13:00</option><option value="13:30">13:30</option><option value="14:00">14:00</option><option value="14:30">14:30</option><option value="15:00">15:00</option><option value="15:30">15:30</option><option value="16:00">16:00</option><option value="16:30">16:30</option><option value="17:00">17:00</option><option value="17:30">17:30</option><option value="18:00">18:00</option><option value="18:30">18:30</option><option value="19:00">19:00</option></select><p class="muted">Retiradas normalmente das 8h às 19h, a cada 30 minutos. O horário será confirmado pela Juliana. Horários excepcionais, domingos e feriados: consulte a disponibilidade.</p><p id="pickupNotice" class="note hidden" role="status" aria-live="polite"></p><p id="blockNotice" class="note hidden" role="status" aria-live="polite"></p><label>Tema, cores, topper, flores e observações</label><textarea id="notes" placeholder="Ex.: Tema jardim, rosa e branco, topper com nome Ana, flores..."></textarea><label>Fotos de referência (opcional)</label><input id="photos" type="file" accept="image/*" multiple><p id="photoStatus" class="muted" role="status"></p><div id="previews" class="preview"></div><p class="muted">Até 2 fotos opcionais. As imagens serão comprimidas automaticamente antes do envio e ficarão vinculadas à encomenda.</p><p class="pill">Somente retirada no local — não fazemos entregas.</p></div><div class="card"><h2>3. Valor estimado</h2><div class="muted" id="summary"></div><div id="total" class="price">R$ 80,00</div><p class="note">Este é o preço base. Topper, flores e decoração especial dependem de avaliação. O pedido só será confirmado após aprovação da confeiteira.</p><button class="btn" id="save" type="button">Enviar pedido à confeiteira</button><button class="btn alt" id="share" type="button">Enviar resumo pelo WhatsApp</button><p id="feedback" class="muted" role="status"></p></div></section></main><footer>MeuDoce • Solicitações online • Valores e disponibilidade sujeitos à aprovação</footer><div class="success-overlay" id="successOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="successTitle"><div class="success-dialog"><div class="check" aria-hidden="true">✅</div><h2 id="successTitle">Pedido salvo com sucesso!</h2><p>Recebemos sua solicitação. A Juliana vai avaliar os detalhes e confirmar a disponibilidade.</p><p id="successNumber" class="muted"></p><button class="btn" id="successClose" type="button">Entendi</button></div></div><div class="reservation-overlay" id="reservationOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="reservationTitle"><div class="reservation-dialog"><h2 id="reservationTitle">🍰 Solicitar reserva</h2><p id="reservationCake" class="muted"></p><form id="reservationForm"><label for="reservationName">Seu nome *</label><input id="reservationName" required minlength="2" maxlength="120" autocomplete="name" placeholder="Nome completo"><label for="reservationPhone">Seu WhatsApp *</label><input id="reservationPhone" required type="tel" inputmode="tel" maxlength="20" autocomplete="tel" placeholder="(27) 99999-9999"><p class="muted">A solicitação não garante o bolo. Juliana confirmará a disponibilidade. Somente retirada no local.</p><p id="reservationMessage" class="reservation-message" role="status" aria-live="polite"></p><div class="flex"><button class="btn alt" id="reservationCancel" type="button">Fechar</button><button class="btn" id="reservationSend" type="submit">Enviar solicitação</button></div></form></div></div><script>
 'use strict';
 const $=id=>document.getElementById(id);
 const SUPABASE_URL='https://exspoxvpwtcsefocacdy.supabase.co';
@@ -67,13 +67,61 @@ function price(){return state.weight ? state.weight*(state.mass==='Branca'?80:90
 function renderPrice(){const completo=state.mass&&state.weight&&state.shape&&state.filling1&&state.filling2;$('summary').textContent=completo?`${Number(state.weight).toLocaleString('pt-BR')} kg · Massa ${state.mass.toLowerCase()} · ${state.shape.toLowerCase()} · ${state.filling1} + ${state.filling2}`:'Escolha massa, peso, formato e os dois recheios para calcular o valor.';$('total').textContent=completo?money(price()):'Selecione todas as opções'}
 for(const [id,field] of [['masses','mass'],['weights','weight'],['shapes','shape'],['filling1','filling1'],['filling2','filling2']])renderChoices(id,field);renderPrice();
 function details(){return {client:$('client').value.trim(),phone:$('phone').value.trim(),pickup:$('pickup').value,pickupTime:$('pickupTime').value,notes:$('notes').value.trim(),...state,basePrice:price()}}
-function message(o){return `🍰 *Pedido MeuDoce — sujeito à aprovação*\nCliente: ${o.client||'Não informado'}\nWhatsApp: ${o.phone||'Não informado'}\nPeso: ${Number(o.weight).toLocaleString('pt-BR')} kg\nMassa: ${o.mass}\nFormato: ${o.shape}\nCobertura: Chantininho\nRecheios (2 camadas): ${o.filling1} + ${o.filling2}\nRetirada desejada: ${o.pickup||'A combinar'} ${o.pickupTime||''}\nTema/cores/adicionais: ${o.notes||'Não informado'}\nValor base: ${money(o.basePrice)}\nTopper, flores e decoração especial sob avaliação. Sem entregas.\nPedido e valor final sujeitos à aprovação.\n📷 Fotos de referência: enviar nesta conversa, separadamente.`}
+function message(o){return `🍰 *Pedido MeuDoce — sujeito à aprovação*\nCliente: ${o.client||'Não informado'}\nWhatsApp: ${o.phone||'Não informado'}\nPeso: ${Number(o.weight).toLocaleString('pt-BR')} kg\nMassa: ${o.mass}\nFormato: ${o.shape}\nCobertura: Chantininho\nRecheios (2 camadas): ${o.filling1} + ${o.filling2}\nRetirada desejada: ${o.pickup||'A combinar'} ${o.pickupTime||''}\nTema/cores/adicionais: ${o.notes||'Não informado'}\nValor base: ${money(o.basePrice)}\nTopper, flores e decoração especial sob avaliação. Sem entregas.\nPedido e valor final sujeitos à aprovação.\n📷 Fotos de referência: se anexadas ao pedido, estarão no painel da confeiteira.`}
 $('share').addEventListener('click',()=>{const d=details();window.open('https://wa.me/?text='+encodeURIComponent(message(d)),'_blank','noopener,noreferrer')});
-$('photos').addEventListener('change',e=>{const box=$('previews');box.replaceChildren();Array.from(e.target.files||[]).slice(0,6).forEach(f=>{if(!f.type.startsWith('image/'))return;const url=URL.createObjectURL(f);const img=document.createElement('img');img.alt='Foto de referência selecionada';img.src=url;img.onload=()=>URL.revokeObjectURL(url);box.append(img)})});
+const MAX_FOTOS=2, MAX_BYTES=500*1024;
+let fotosSelecionadas=[];
+function visualizarFotos(){
+  const box=$('previews');box.replaceChildren();
+  fotosSelecionadas.forEach(f=>{const url=URL.createObjectURL(f),img=document.createElement('img');img.alt='Foto de referência selecionada';img.src=url;img.onload=()=>URL.revokeObjectURL(url);box.append(img)});
+  $('photoStatus').textContent=fotosSelecionadas.length?`${fotosSelecionadas.length} foto(s) selecionada(s), máximo 2.`:'Nenhuma foto selecionada.';
+}
+$('photos').addEventListener('change',e=>{
+  const files=Array.from(e.target.files||[]);
+  if(files.length>MAX_FOTOS){alert('Selecione no máximo 2 fotos.');e.target.value='';fotosSelecionadas=[];visualizarFotos();return;}
+  if(files.some(f=>!f.type.startsWith('image/'))){alert('Escolha somente imagens.');e.target.value='';fotosSelecionadas=[];visualizarFotos();return;}
+  fotosSelecionadas=files;visualizarFotos();
+});
+async function comprimirFoto(file){
+  const bitmap=await createImageBitmap(file).catch(()=>null);
+  if(!bitmap)throw Error('Não foi possível abrir a foto. Escolha uma imagem JPG, PNG ou WebP.');
+  try{
+    for(const dimensao of [1600,1280,1024,800,640,480]){
+      const escala=Math.min(1,dimensao/Math.max(bitmap.width,bitmap.height));
+      const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*escala));canvas.height=Math.max(1,Math.round(bitmap.height*escala));
+      canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);
+      for(const qualidade of [.82,.70,.58,.45,.32]){
+        const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',qualidade));
+        if(blob&&blob.size<=MAX_BYTES)return blob;
+      }
+    }
+    throw Error('Não foi possível reduzir a foto para 500 KB. Tente outra imagem.');
+  }finally{bitmap.close?.();}
+}
+async function enviarFotos(pedidoId){
+  const id=String(pedidoId);
+  if(!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(id))throw Error('Protocolo do pedido inválido para anexar fotos.');
+  for(let i=0;i<fotosSelecionadas.length;i++){
+    $('feedback').textContent=`Pedido registrado. Enviando foto ${i+1} de ${fotosSelecionadas.length}...`;
+    const blob=await comprimirFoto(fotosSelecionadas[i]);
+    const response=await fetch(`${SUPABASE_URL}/storage/v1/object/referencias-pedidos/${id}/${i+1}.jpg`,{
+      method:'POST',headers:{apikey:SUPABASE_KEY,'Content-Type':'image/jpeg','x-upsert':'false'},body:blob
+    });
+    if(!response.ok){const e=await response.json().catch(()=>({}));throw Error(e.message||'Falha ao enviar foto '+(i+1));}
+  }
+}
+let pedidoPendenteFotos=null;
+
 let sending=false;
 $('successClose').addEventListener('click',()=>{$('successOverlay').hidden=true});
 $('save').addEventListener('click',async()=>{
   if(sending)return;
+  if(pedidoPendenteFotos){
+    sending=true;$('save').disabled=true;
+    try{await enviarFotos(pedidoPendenteFotos);pedidoPendenteFotos=null;$('feedback').className='success';$('feedback').textContent='Fotos enviadas! A Juliana poderá visualizá-las no painel.';$('successOverlay').hidden=false;$('save').textContent='Pedido enviado com sucesso';}
+    catch(e){$('feedback').className='error';$('feedback').textContent='O pedido foi salvo, mas as fotos não foram enviadas: '+e.message;$('save').disabled=false;$('save').textContent='Tentar enviar fotos novamente';}
+    finally{sending=false;}return;
+  }
   const o=details();
   if(o.client.length<2){alert('Informe o nome completo da cliente.');$('client').focus();return}
   const digitos=o.phone.replace(/\D/g,'');
@@ -112,16 +160,17 @@ $('save').addEventListener('click',async()=>{
     if(!response.ok){const err=await response.json().catch(()=>({}));throw new Error(err.message||'Erro ao enviar pedido ('+response.status+').')}
     const pedidoId=await response.json();
     sessionStorage.setItem('meudoce_ultimo_pedido',assinatura);
+    if(fotosSelecionadas.length){pedidoPendenteFotos=pedidoId;await enviarFotos(pedidoId);pedidoPendenteFotos=null;}
     $('feedback').className='success';
     $('successNumber').textContent='Protocolo: '+String(pedidoId).slice(0,8);
     $('successOverlay').hidden=false;
-    $('feedback').textContent='Pedido enviado! Número: '+String(pedidoId).slice(0,8)+'. Aguarde a avaliação da confeiteira. Fotos de referência devem ser enviadas separadamente pelo WhatsApp.';
+    $('feedback').textContent='Pedido enviado! Número: '+String(pedidoId).slice(0,8)+'. '+(fotosSelecionadas.length?'Fotos anexadas com sucesso. ':'')+'Aguarde a avaliação da confeiteira.';
     $('save').textContent='Pedido enviado com sucesso';
     $('save').disabled=true;
   }catch(error){
     $('feedback').className='error';
-    $('feedback').textContent='Não foi possível enviar o pedido. Verifique sua conexão e tente novamente. '+error.message;
-    $('save').disabled=false;$('save').textContent='Tentar enviar novamente';
+    $('feedback').textContent=pedidoPendenteFotos?'Pedido salvo, mas houve problema ao enviar as fotos: '+error.message+' Toque para tentar enviar somente as fotos.':'Não foi possível enviar o pedido. Verifique sua conexão e tente novamente. '+error.message;
+    $('save').disabled=false;$('save').textContent=pedidoPendenteFotos?'Tentar enviar fotos novamente':'Tentar enviar novamente';
   }finally{sending=false}
 });
 
