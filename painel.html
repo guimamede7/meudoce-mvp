@@ -9,7 +9,7 @@
 .tabbar{display:flex;gap:8px;margin-bottom:14px}.tabbar button{flex:1}
 .tabbar button.active{background:#963e61;color:white}
 .tabbar button:not(.active){background:#f4e5eb;color:#7b3753}
-.product-photo{width:105px;height:105px;object-fit:cover;border-radius:12px;background:#f4e5eb}
+.reference-photos{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.reference-photos button{padding:0;background:transparent;border:0}.reference-photos img{width:112px;height:112px;object-fit:cover;border-radius:10px;border:1px solid #e8cbd6}.product-photo{width:105px;height:105px;object-fit:cover;border-radius:12px;background:#f4e5eb}
 .product-item{display:flex;gap:12px;align-items:flex-start;border-top:1px solid #f0dfe5;padding:14px 0}
 .product-item:first-child{border-top:0}
 .product-info{flex:1;min-width:0}
@@ -132,6 +132,21 @@ async function updateOrder(id,changes){
   const o=orders.find(x=>x.id===id);if(o)Object.assign(o,changes);
   notice('Alteração salva no Supabase.','success');render();renderAgenda();return true;
 }
+async function mostrarFotosPedido(pedidoId,container){
+  container.replaceChildren(node('p','muted','Carregando fotos...'));
+  const {data,error}=await db.storage.from('referencias-pedidos').list(String(pedidoId),{limit:2});
+  if(error){container.replaceChildren(node('p','muted','Fotos indisponíveis: '+error.message));return;}
+  const arquivos=(data||[]).filter(f=>/^[12]\.jpg$/.test(f.name));
+  container.replaceChildren();
+  if(!arquivos.length){container.append(node('p','muted','Nenhuma foto de referência anexada.'));return;}
+  for(const f of arquivos){
+    const {data:assinatura,error:erro}=await db.storage.from('referencias-pedidos').createSignedUrl(`${pedidoId}/${f.name}`,300);
+    if(erro||!assinatura?.signedUrl){container.append(node('p','muted','Não foi possível carregar uma foto.'));continue;}
+    const botao=node('button');botao.type='button';botao.title='Ampliar foto';
+    const img=node('img');img.src=assinatura.signedUrl;img.alt='Foto de referência do pedido';img.loading='lazy';botao.append(img);
+    botao.onclick=()=>window.open(assinatura.signedUrl,'_blank','noopener,noreferrer');container.append(botao);
+  }
+}
 function render(){
   $('total').textContent=orders.length;
   $('pending').textContent=orders.filter(x=>x.status==='Aguardando avaliação').length;
@@ -145,6 +160,7 @@ function render(){
     const wrap=node('article','order'),top=node('div','row');
     top.append(node('h3','',o.cliente_nome||'Cliente'),node('span','tag',o.status||'Sem status'));
     wrap.append(top,node('p','muted',`Pedido ${o.id} · Retirada: ${o.data_retirada||'A definir'}`),node('p','',`${o.peso_kg??'—'} kg · Massa ${o.massa||'—'} · Formato ${o.formato||'—'} · ${o.recheio_1||'—'} + ${o.recheio_2||'—'}`),node('p','',`WhatsApp: ${o.cliente_whatsapp||'Não informado'}`),node('p','',`Decoração: ${o.decoracao||'Não informada'}`),node('p','',`Preço base: ${money(o.preco_base)}`));
+    const fotosBox=node('div','reference-photos');const fotosBtn=node('button','secondary','📷 Ver fotos de referência');fotosBtn.type='button';fotosBtn.onclick=()=>mostrarFotosPedido(o.id,fotosBox);wrap.append(fotosBtn,fotosBox);
     const priceLabel=node('label','','Preço final (R$)'),price=node('input');price.type='number';price.min='0';price.step='0.01';price.value=o.preco_final??o.preco_base??0;
     price.addEventListener('change',async()=>{const val=Number(price.value);if(!Number.isFinite(val)||val<0){notice('Informe um preço válido.','error');return;}price.disabled=true;await updateOrder(o.id,{preco_final:val});});priceLabel.append(price);wrap.append(priceLabel);
     const noteLabel=node('label','','Observações internas'),note=node('textarea');note.value=o.observacoes_internas||'';
